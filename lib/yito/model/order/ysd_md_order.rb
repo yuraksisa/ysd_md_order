@@ -60,6 +60,35 @@ module Yito
             Digest::MD5.hexdigest("#{rand}#{customer_name}#{customer_surname}#{customer_email}#{rand}")
         end
 
+
+        #
+        # Creates an online charge 
+        #
+        # @param [String] payment to be created : deposit, total, pending
+        # @param [String] payment method id
+        #
+        # @return [Charge] The created charge
+        #
+        def create_online_charge!(charge_payment, charge_payment_method_id)
+       
+          if total_pending > 0 and 
+            charge_payment_method = Payments::PaymentMethod.get(charge_payment_method_id.to_sym) and
+            not charge_payment_method.is_a?Payments::OfflinePaymentMethod 
+
+            amount = case charge_payment.to_sym
+                       when :total
+                         total_cost
+                       when :pending
+                         total_pending
+                     end
+ 
+            charge = new_charge!(charge_payment_method_id, amount) if amount > 0
+            save
+            return charge
+          end 
+
+        end
+
         #
         # Confirms the booking
         #
@@ -193,19 +222,37 @@ module Yito
         #
         def as_json(options={})
 
-         if options.has_key?(:only)
-           super(options)
-         else
-           relationships = options[:relationships] || {}
-           relationships.store(:charges, {})
-           relationships.store(:order_items, {})
-           methods = options[:methods] || []
-           methods << :is_expired
-           super(options.merge({:relationships => relationships, :methods => methods}))
-         end
+          if options.has_key?(:only)
+            super(options)
+          else
+            relationships = options[:relationships] || {}
+            relationships.store(:charges, {})
+            relationships.store(:order_items, {})
+            methods = options[:methods] || []
+            methods << :is_expired
+            super(options.merge({:relationships => relationships, :methods => methods}))
+          end
 
-     end
+        end
 
+        private
+     
+        #
+        # Creates a new charge for the order
+        #
+        # @param [String] payment_method_id
+        # @param [Number] amount
+        #
+        # @return [Payments::Charge] The created charge
+        #
+        def new_charge!(charge_payment_method_id, charge_amount)
+          charge = Payments::Charge.create({:date => Time.now,
+              :amount => charge_amount, 
+              :payment_method_id => charge_payment_method_id,
+              :currency => SystemConfiguration::Variable.get_value('payments.default_currency', 'EUR') }) 
+          self.charges << charge
+          return charge
+        end
 
       end
     end

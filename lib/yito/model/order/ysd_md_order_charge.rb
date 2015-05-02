@@ -52,7 +52,7 @@ module Yito
         #
         def charge_source_description
       
-          if booking and booking.id
+          if order and order.id
             ::Yito::Model::Order.r18n.t.order_model.charge_description(order.id)       
           end
 
