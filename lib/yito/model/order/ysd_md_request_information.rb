@@ -6,6 +6,8 @@ module Yito
         	include DataMapper::Resource
         storage_names[:default] = 'orderds_request_informations' 
 
+        property :id, Serial
+
         property :creation_date, DateTime, :field => 'creation_date'  # The creation date
         property :source, String, :field => 'source', :length => 50   # Where does the booking come from
 
