@@ -3,6 +3,7 @@ require 'yito/model/order/ysd_md_order'
 require 'yito/model/order/ysd_md_order_item'
 require 'yito/model/order/ysd_md_order_charge'
 require 'yito/model/order/ysd_md_order_charge_observer'
+require 'yito/model/order/ysd_md_request_information'
 
 module Yito
   module Model
