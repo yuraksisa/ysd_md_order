@@ -17,8 +17,10 @@ module Yito
         property :total_cost, Decimal, :field => 'total_cost', :scale => 2, :precision => 10, :default => 0
         property :total_paid, Decimal, :field => 'total_paid', :scale => 2, :precision => 10, :default => 0
         property :total_pending, Decimal, :field => 'total_pending', :scale => 2, :precision => 10, :default => 0
+        property :reservation_amount, Decimal, :field => 'reservation_amount', :scale => 2, :precision => 10, :default => 0
 
         property :force_allow_payment, Boolean, :field => 'force_allow_payment', :default => false
+        property :force_allow_deposit_payment, Boolean, :field => 'force_allow_deposit_payment', :default => false
    
         has n, :order_charges, 'OrderCharge', :child_key => [:order_id], :parent_key => [:id]
         has n, :charges, 'Payments::Charge', :through => :order_charges
@@ -76,12 +78,16 @@ module Yito
             not charge_payment_method.is_a?Payments::OfflinePaymentMethod 
 
             amount = case charge_payment.to_sym
+                       when :deposit
+                         reservation_amount
                        when :total
                          total_cost
                        when :pending
                          total_pending
                      end
  
+            p "AMOUNT : #{amount} #{charge_payment.to_sym} #{total_cost} #{total_pending}"
+
             charge = new_charge!(charge_payment_method_id, amount) if amount > 0
             save
             return charge
@@ -163,7 +169,7 @@ module Yito
            conf_item_hold_time = SystemConfiguration::Variable.get_value('booking.item_hold_time', '0').to_i
            hold_time_diff_in_hours = (DateTime.now.to_time - self.creation_date.to_time) / 3600
            expired = (hold_time_diff_in_hours > conf_item_hold_time)
-           expired and !force_allow_payment
+           expired and (!force_allow_payment or !force_allow_deposit_payment)
         end
 
         alias_method :is_expired, :expired?
@@ -173,16 +179,16 @@ module Yito
         #
         def can_pay?
 
-          conf_payment_enabled = SystemConfiguration::Variable.get_value('booking.payment', 'false').to_bool
-          conf_allow_total_payment = SystemConfiguration::Variable.get_value('booking.allow_total_payment','false').to_bool
+          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
+          conf_allow_deposit_payment = SystemConfiguration::Variable.get_value('order.allow_deposit_payment','false').to_bool
 
-          can_pay = (total_pending > 0 and status != :cancelled and (conf_payment_enabled or force_allow_payment)) 
+          can_pay = (total_pending > 0 and status != :cancelled) 
 
           if can_pay
-            if self.total_paid > 0 # It's not the first payment
-              can_pay = (can_pay and conf_allow_total_payment) 
-            else  # It's the first payment (check expiration)
-              can_pay = (can_pay and !self.expired?)
+            if self.total_paid > 0 
+              can_pay = (can_pay and (conf_allow_total_payment or force_allow_total_payment)) 
+            else  
+              can_pay = (can_pay and ((conf_allow_deposit_payment and !self.expired?) or force_allow_deposit_payment))
             end
           end            
 
