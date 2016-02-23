@@ -86,8 +86,6 @@ module Yito
                          total_pending
                      end
  
-            p "AMOUNT : #{amount} #{charge_payment.to_sym} #{total_cost} #{total_pending}"
-
             charge = new_charge!(charge_payment_method_id, amount) if amount > 0
             save
             return charge
@@ -186,7 +184,7 @@ module Yito
 
           if can_pay
             if self.total_paid > 0 
-              can_pay = (can_pay and (conf_allow_total_payment or force_allow_total_payment)) 
+              can_pay = (can_pay and (conf_allow_total_payment or force_allow_payment)) 
             else  
               can_pay = (can_pay and ((conf_allow_deposit_payment and !self.expired?) or force_allow_deposit_payment))
             end
@@ -237,6 +235,32 @@ module Yito
             methods = options[:methods] || []
             methods << :is_expired
             super(options.merge({:relationships => relationships, :methods => methods}))
+          end
+
+        end
+
+        #
+        # Get the occupation of and item_id in a date and a time
+        #
+        def self.occupation(item_id, date, time, price_type=nil)
+
+          if price_type.nil?
+            query = <<-QUERY
+                      select item_id, date, time, sum(quantity) as occupation
+                      from orderds_order_items
+                      where item_id = ? and date = ? and time = ?
+                      group by item_id, date, time
+                    QUERY
+            repository.adapter.select(query, item_id, date, time).first
+          else
+            query = <<-QUERY
+                      select item_id, date, time, item_price_type, sum(quantity) as occupation
+                      from orderds_order_items
+                      where item_id = ? and date = ? and time = ? and item_price_type = ?
+                      group by item_id, date, time, item_price_type
+                    QUERY
+
+            repository.adapter.select(query, item_id, date, time, price_type).first
           end
 
         end

@@ -16,7 +16,8 @@ module Yito
         property :item_unit_cost, Decimal, :precision => 10, :scale => 2
         property :quantity, Integer
         property :item_cost, Decimal, :precision => 10, :scale => 2
-         
+        property :item_price_type, Integer, :required => true, :default => 1
+
         property :comments, Text
         property :notes, Text
 
@@ -24,7 +25,7 @@ module Yito
    
         property :status, Enum[:pending_confirmation, :confirmed,  
            :cancelled], :field => 'status', :default => :pending_confirmation
-
+        
       end
     end
   end
