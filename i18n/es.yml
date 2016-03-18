@@ -1,2 +1,9 @@
+notifications:
+  customer_req_email_subject: Pedido recibido
+  customer_email_subject: Pedido confirmado
+  customer_payment_enabled_subject: Pago de pedido habilitado
+  manager_email_subject: Nuevo pedido
+  manager_paying_email_subject: Cliente realizando pago pedido
+  manager_confirmation_email_subject: Pedido confirmado   
 order_model:
   charge_description: Pedido %1

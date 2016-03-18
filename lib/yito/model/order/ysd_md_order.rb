@@ -5,6 +5,9 @@ module Yito
   	module Order
   	  class Order
   	  	include DataMapper::Resource
+        include Yito::Model::UserAgentData
+        extend Yito::Model::Order::NotificationTemplates
+        include Yito::Model::Order::Notifications
 
         storage_names[:default] = 'orderds_orders' 
   	  	
@@ -43,6 +46,38 @@ module Yito
            :cancelled], :field => 'status', :default => :pending_confirmation
         property :payment_status, Enum[:none, :deposit, :total, :refunded], 
            :field => 'payment_status', :default => :none
+        
+        #
+        # Creates an order from a shopping cart
+        #
+        def self.create_from_shopping_cart(shopping_cart)
+
+          order = Order.new
+          order.source = shopping_cart.source
+          order.total_cost = shopping_cart.total_cost
+          order.total_paid = 0
+          order.total_pending = shopping_cart.total_cost
+          #order.reservation_amount =
+
+          # Build the order items
+          shopping_cart.shopping_cart_items.each do |shopping_cart_item| 
+            order_item = OrderItem.new
+            order_item.date = shopping_cart_item.date 
+            order_item.time = shopping_cart_item.time 
+            order_item.item_id = shopping_cart_item.item_id
+            order_item.item_description = shopping_cart_item.item_description
+            order_item.item_unit_cost = shopping_cart_item.item_unit_cost
+            order_item.quantity = shopping_cart_item.quantity
+            order_item.item_cost = shopping_cart_item.item_cost
+            order_item.item_price_type = shopping_cart_item.item_price_type
+            order_item.item_price_description = shopping_cart_item.item_price_description
+            order_item.order = order
+            order.order_items << order_item
+          end
+          
+          return order
+
+        end
 
         #
         # Get a order by its free access id
@@ -62,6 +97,29 @@ module Yito
             Digest::MD5.hexdigest("#{rand}#{customer_name}#{customer_surname}#{customer_email}#{rand}")
         end
 
+        #
+        # Get the order items group by date, time and item_id
+        #
+        def order_items_group_by_date_time_item_id
+          result = {}
+          idx = 1
+          last_order_item = nil
+          order_items.each do |order_item|
+            if last_order_item.nil? or 
+               (last_order_item.date != order_item.date or
+                last_order_item.time != order_item.time or 
+                last_order_item.item_id != order_item.item_id)
+              result.store(idx, {items: [order_item], total: order_item.item_cost})
+              idx += 1
+              last_order_item = order_item
+            else
+              the_data = result[idx-1]
+              the_data[:items] << order_item
+              the_data[:total] += order_item.item_cost
+            end
+          end
+          result
+        end
 
         #
         # Creates an online charge 
@@ -109,6 +167,8 @@ module Yito
               order_item.status = :confirmed 
             end
             save
+            notify_manager_confirmation
+            notify_customer            
           else
             p "Could not confirm order #{id} #{status}"
           end
@@ -164,7 +224,7 @@ module Yito
         # Check if the order has expired
         #
         def expired?
-           conf_item_hold_time = SystemConfiguration::Variable.get_value('booking.item_hold_time', '0').to_i
+           conf_item_hold_time = SystemConfiguration::Variable.get_value('order.item_hold_time', '0').to_i
            hold_time_diff_in_hours = (DateTime.now.to_time - self.creation_date.to_time) / 3600
            expired = (hold_time_diff_in_hours > conf_item_hold_time)
            expired and (!force_allow_payment or !force_allow_deposit_payment)

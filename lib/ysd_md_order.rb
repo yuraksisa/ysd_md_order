@@ -1,9 +1,12 @@
 require 'yito/model/order/ysd_md_product'
+require 'yito/model/order/ysd_md_order_notification'
 require 'yito/model/order/ysd_md_order'
 require 'yito/model/order/ysd_md_order_item'
 require 'yito/model/order/ysd_md_order_charge'
 require 'yito/model/order/ysd_md_order_charge_observer'
 require 'yito/model/order/ysd_md_request_information'
+require 'yito/model/order/ysd_md_shopping_cart'
+require 'yito/model/order/ysd_md_shopping_cart_item'
 
 module Yito
   module Model

@@ -1,2 +1,9 @@
+notifications:
+  customer_req_email_subject: Solicitud rebuda
+  customer_email_subject: La seva comanda
+  customer_payment_enabled_subject: Pagament de comanda habilitat  
+  manager_email_subject: Comanda
+  manager_paying_email_subject: Client pagant comanda
+  manager_confirmation_email_subject: Comanda confirmada    
 order_model:
   charge_description: Comanda %1

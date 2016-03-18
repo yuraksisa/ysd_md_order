@@ -1,0 +1,36 @@
+¡Gracias, <%customer_name%>! Acabamos de recibir su pedido. Todavía no ha realizado el pago y su pedido está pendiente de confirmación.
+
+Pedido
+-------
+ Número de pedido: <%= id %>
+ Reserva realizada por: <%= customer_name %> <%= customer_surname %>
+ Correo electrónico: <%= customer_email %>
+ Teléfono: <%= customer_phone %>
+ Comentarios: <%= comments %>
+
+Productos contratados
+---------------------
+
+<% order_items_group_by_date_time_item_id.each do |idx,order_items| %>
+   <% first_order_item = order_items[:items].first %>
+
+   producto: <%=first_order_item.item_description%>
+   fecha: <%=first_order_item.date.strftime("%d-%m-%Y") unless first_order_item.date.nil?%> <%first_order_item.time%>
+   <% order_items[:items].each do |order_item| %>
+     <%=order_item.quantity%> <%=order_item.item_price_description%> x <%="%.2f" % order_item.item_unit_cost%>€ : <%="%.2f" % order_item.item_cost%>€
+   <% end %>
+   total: <%="%.2f" % order_items[:total]%>€
+
+<% end %>
+
+Precio
+--------------
+ Precio total: <%="%.2f" % total_cost%>€
+ <% if (reservation_amount) %>
+ Abono a cuenta reserva: <%= reservation_amount.to_s('F') %> €
+ Pendiente de pago: <%= total_pending.to_s('F') %> €
+ <% end %>
+
+Enlace de gestión
+-----------------
+<%= free_access_id %>

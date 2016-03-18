@@ -1,2 +1,9 @@
+notifications:
+  customer_req_email_subject: Order received
+  customer_email_subject: Your order
+  customer_payment_enabled_subject: Payment enabled  
+  manager_email_subject: New order
+  manager_paying_email_subject: Customer paying new order
+  manager_confirmation_email_subject: Order confirmed   
 order_model:
   charge_description: Order %1

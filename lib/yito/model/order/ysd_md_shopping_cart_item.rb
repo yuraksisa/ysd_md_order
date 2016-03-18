@@ -1,10 +1,10 @@
 module Yito
   module Model
   	module Order
-  	  class OrderItem
+  	  class ShoppingCartItem
   	  	include DataMapper::Resource
 
-        storage_names[:default] = 'orderds_order_items' 
+        storage_names[:default] = 'orderds_shopping_cart_items' 
   	  	
         property :id, Serial
 
@@ -16,17 +16,11 @@ module Yito
         property :item_unit_cost, Decimal, :precision => 10, :scale => 2
         property :quantity, Integer
         property :item_cost, Decimal, :precision => 10, :scale => 2
-        property :item_price_type, Integer, :required => true, :default => 1
         property :item_price_description, String, :length => 256
-        
-        property :comments, Text
-        property :notes, Text
+        property :item_price_type, Integer, :required => true, :default => 1
 
-        belongs_to :order, 'Order', :child_key => [:order_id]
-   
-        property :status, Enum[:pending_confirmation, :confirmed,  
-           :cancelled], :field => 'status', :default => :pending_confirmation
-        
+        belongs_to :shopping_cart, 'ShoppingCart', :child_key => [:order_id]
+          
       end
     end
   end
