@@ -8,6 +8,7 @@ module Yito
         include Yito::Model::UserAgentData
         extend Yito::Model::Order::NotificationTemplates
         include Yito::Model::Order::Notifications
+        extend Yito::Model::Booking::ActivityQueries
 
         storage_names[:default] = 'orderds_orders' 
   	  	
