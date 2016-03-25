@@ -307,22 +307,28 @@ module Yito
 
           if price_type.nil?
             query = <<-QUERY
-                      select item_id, date, time, sum(quantity) as occupation
-                      from orderds_order_items
-                      where item_id = ? and date = ? and time = ?
-                      group by item_id, date, time
+                      select item_id, date, time, item_price_type, sum(quantity) as occupation
+                      from orderds_order_items o_i
+                      join orderds_orders o on o.id = o_i.order_id
+                      where item_id = ? and date = ? and time = ? and
+                            o.status not in (5)
+                      group by item_id, date, time, item_price_type
                     QUERY
-            repository.adapter.select(query, item_id, date, time).first
+            result = repository.adapter.select(query, item_id, date, time)
           else
             query = <<-QUERY
                       select item_id, date, time, item_price_type, sum(quantity) as occupation
                       from orderds_order_items
-                      where item_id = ? and date = ? and time = ? and item_price_type = ?
+                      join orderds_orders o on o.id = o_i.order_id
+                      where item_id = ? and date = ? and time = ? and item_price_type = ? and
+                            o.status not in (5)
                       group by item_id, date, time, item_price_type
                     QUERY
 
-            repository.adapter.select(query, item_id, date, time, price_type).first
+            result = repository.adapter.select(query, item_id, date, time, price_type)
           end
+          
+          return result
 
         end
 
