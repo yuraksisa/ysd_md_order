@@ -1,3 +1,4 @@
+require 'ysd_md_request_information_aspect'
 require 'yito/model/order/ysd_md_product'
 require 'yito/model/order/ysd_md_order_notification'
 require 'yito/model/order/ysd_md_order'

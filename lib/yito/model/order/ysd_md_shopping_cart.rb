@@ -59,6 +59,21 @@ module Yito
         def items_count
           shopping_cart_items_group_by_date_time_item_id.size
         end
+        
+        #
+        # Get the item quantity in a shopping cart 
+        #
+        def item_quantity(item_id, item_price_type)
+          p "item_id: #{item_id} #{item_price_type}"
+          the_items = shopping_cart_items.select do |item|
+                       item.item_id == item_id && item.item_price_type == item_price_type
+                     end
+          if the_items.size > 0
+            return the_items.first.quantity
+          else
+            return 0
+          end
+        end
 
         #
         # Adds an item to the shopping cart

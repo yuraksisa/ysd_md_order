@@ -4,6 +4,8 @@ module Yito
     module Order
       class RequestInformation
         	include DataMapper::Resource
+            include Yito::Model::UserAgentData
+
         storage_names[:default] = 'orderds_request_informations' 
 
         property :id, Serial
@@ -18,6 +20,9 @@ module Yito
         property :customer_mobile_phone, String, :field => 'customer_mobile_phone', :length => 15
         property :customer_language, String, :field => 'customer_language', :length => 3
 
+        property :subject, String, :length => 255
+        property :created_by_manager, Boolean, :default => true
+        property :comments, Text
         property :notes, Text
 
         #
