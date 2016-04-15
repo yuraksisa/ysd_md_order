@@ -64,7 +64,6 @@ module Yito
         # Get the item quantity in a shopping cart 
         #
         def item_quantity(item_id, item_price_type)
-          p "item_id: #{item_id} #{item_price_type}"
           the_items = shopping_cart_items.select do |item|
                        item.item_id == item_id && item.item_price_type == item_price_type
                      end
@@ -82,17 +81,21 @@ module Yito
                      quantity, item_unit_cost, item_price_description)
 
           # Check if item exists
-          shopping_cart_item = ::Yito::Model::Order::ShoppingCartItem.first(date: date,
-                                 time: time, item_id: item_id, item_price_type: item_price_type)
-
+          shopping_cart_item = ::Yito::Model::Order::ShoppingCartItem.first(
+                                 shopping_cart_id: self.id, date: date, time: time,
+                                 item_id: item_id, item_price_type: item_price_type)
+          
+          begin
           if shopping_cart_item
             inc_cost = (quantity * shopping_cart_item.item_unit_cost)
             shopping_cart_item.quantity += quantity
             shopping_cart_item.item_cost += inc_cost
             shopping_cart_item.save
             self.total_cost += inc_cost
+            self.save
           else
             shopping_cart_item = ::Yito::Model::Order::ShoppingCartItem.new
+            shopping_cart_item.shopping_cart = self
             shopping_cart_item.date = date
             shopping_cart_item.time = time
             shopping_cart_item.item_id = item_id
@@ -102,10 +105,14 @@ module Yito
             shopping_cart_item.quantity = quantity
             shopping_cart_item.item_unit_cost = item_unit_cost
             shopping_cart_item.item_cost = shopping_cart_item.item_unit_cost * shopping_cart_item.quantity
-            self.shopping_cart_items << shopping_cart_item
+            shopping_cart_item.save
             self.total_cost += shopping_cart_item.item_cost
+            self.save
           end
-
+          rescue DataMapper::SaveFailureError => error
+            p "Error adding item. #{shopping_cart_item.errors.inspect} ** #{self.errors.inspect}"
+            raise error
+          end
         end
         
         #
@@ -113,10 +120,9 @@ module Yito
         #
         def remove_item(date,time,item_id)
 
-          shopping_cart_items = ::Yito::Model::Order::ShoppingCartItem.all(shopping_cart_id: self.id,
-                                                                           date: date,
-                                                                           time: time,
-                                                                           item_id: item_id)
+          shopping_cart_items = ::Yito::Model::Order::ShoppingCartItem.all(
+              shopping_cart_id: self.id, date: date, time: time,
+              item_id: item_id)
           
           if shopping_cart_items.size > 0
             shopping_cart_items.each do |shopping_cart_item|

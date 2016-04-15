@@ -19,7 +19,7 @@ module Yito
         property :item_price_description, String, :length => 256
         property :item_price_type, Integer, :required => true, :default => 1
 
-        belongs_to :shopping_cart, 'ShoppingCart', :child_key => [:order_id]
+        belongs_to :shopping_cart, 'ShoppingCart', :child_key => [:shopping_cart_id]
           
       end
     end
