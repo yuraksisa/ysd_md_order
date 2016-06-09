@@ -49,6 +49,65 @@ module Yito
            :field => 'payment_status', :default => :none
         
         #
+        # Adds an item to the order
+        # 
+        def add_item(date, time, item_id, item_description, item_price_type,
+                     quantity, item_unit_cost, item_price_description)
+
+          # Check if item exists
+          order_item = ::Yito::Model::Order::OrderItem.first(
+                                 order_id: self.id, date: date, time: time,
+                                 item_id: item_id, item_price_type: item_price_type)
+          
+          begin
+          if order_item
+            inc_cost = (quantity * order_item.item_unit_cost)
+            order_item.quantity += quantity
+            order_item.item_cost += inc_cost
+            order_item.save
+            self.total_cost += inc_cost
+            self.total_pending = 0 if self.total_pending.nil?
+            self.total_pending += inc_cost
+            self.save
+          else
+            order_item = ::Yito::Model::Order::OrderItem.new
+            order_item.order = self
+            order_item.date = date
+            order_item.time = time
+            order_item.item_id = item_id
+            order_item.item_description = item_description
+            order_item.item_price_description = item_price_description
+            order_item.item_price_type = item_price_type
+            order_item.quantity = quantity
+            order_item.item_unit_cost = item_unit_cost
+            order_item.item_cost = order_item.item_unit_cost * order_item.quantity
+            order_item.save
+            self.total_cost += order_item.item_cost
+            self.total_pending = 0 if self.total_pending.nil?
+            self.total_pending += order_item.item_cost
+            self.save
+          end
+          rescue DataMapper::SaveFailureError => error
+            p "Error adding item. #{order_item.errors.inspect} ** #{self.errors.inspect}"
+            raise error
+          end
+        end
+
+        #
+        # Get the item quantity in an order 
+        #
+        def item_quantity(item_id, item_price_type)
+          the_items = order_items.select do |item|
+                       item.item_id == item_id && item.item_price_type == item_price_type
+                     end
+          if the_items.size > 0
+            return the_items.first.quantity
+          else
+            return 0
+          end
+        end
+
+        #
         # Creates an order from a shopping cart
         #
         def self.create_from_shopping_cart(shopping_cart)
