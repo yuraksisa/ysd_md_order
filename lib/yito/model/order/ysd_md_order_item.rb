@@ -10,6 +10,8 @@ module Yito
 
         property :date, DateTime, :field => 'date', :required => false
         property :time, String, :field => 'time', :required => false, :length => 5
+        property :date_to, DateTime, :field => 'date_to', :required => false
+        property :time_to, String, :field => 'time_to', :required => false
 
         property :item_id, String, :length => 20, :required => true
         property :item_description, String, :length => 256        
