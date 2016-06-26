@@ -291,27 +291,47 @@ module Yito
         end
 
         alias_method :is_expired, :expired?
-
+        
         #
-        # Check if the customer can pay for the order
+        # Check if the deposit can be paid
         #
-        def can_pay?
-
-          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
+        def can_pay_deposit?
+          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
           conf_allow_deposit_payment = SystemConfiguration::Variable.get_value('order.allow_deposit_payment','false').to_bool
 
-          can_pay = (total_pending > 0 and status != :cancelled) 
+          can_pay_deposit = (status != :cancelled) && 
+                            ((conf_payment_enabled && conf_allow_deposit_payment && 
+                              !expired? && payment_cadence?) || 
+                             self.force_allow_deposit_payment)
 
-          if can_pay
-            if self.total_paid > 0 
-              can_pay = (can_pay and (conf_allow_total_payment or force_allow_payment)) 
-            else  
-              can_pay = (can_pay and ((conf_allow_deposit_payment and !self.expired?) or force_allow_deposit_payment))
-            end
-          end            
+          return can_pay_deposit
+        end
 
-          return can_pay
+        alias_method :can_pay_deposit, :can_pay_deposit?
 
+        #
+        # Check if the total can be paid
+        #
+        def can_pay_total?
+          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
+          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
+
+          can_pay_total = (status != :cancelled) &&
+                    ((conf_payment_enabled && conf_allow_total_payment && 
+                     !expired? && payment_cadence?) || 
+                     self.force_allow_payment)
+
+          return can_pay_total
+        end
+
+        alias_method :can_pay_total, :can_pay_total?
+
+        def payment_cadence?
+          result = true
+          order_items.each do |item|
+            result = result && Order.payment_cadence?(item.date) unless item.date.nil?
+          end
+          return result
         end
 
         #
@@ -319,12 +339,12 @@ module Yito
         #
         def self.payment_cadence?(date_from)
 
-           conf_payment_cadence = SystemConfiguration::Variable.get_value('booking.payment_cadence', '0').to_i
+           conf_payment_cadence = SystemConfiguration::Variable.get_value('order.payment_cadence', '0').to_i
 
            cadence_from = DateTime.parse("#{date_from.strftime('%Y-%m-%d')}T00:00:00")
-           cadence_payment = (cadence_from.to_time - DateTime.now.to_time) / 3600
-           cadence_payment > conf_payment_cadence
-
+           diff_in_hours = (cadence_from.to_time - DateTime.now.to_time) / 3600
+           diff_in_hours >= conf_payment_cadence
+         
         end
 
         #
@@ -354,6 +374,8 @@ module Yito
             relationships.store(:order_items, {})
             methods = options[:methods] || []
             methods << :is_expired
+            methods << :can_pay_deposit
+            methods << :can_pay_total
             super(options.merge({:relationships => relationships, :methods => methods}))
           end
 
