@@ -9,6 +9,7 @@ module Yito
         extend Yito::Model::Order::NotificationTemplates
         include Yito::Model::Order::Notifications
         extend Yito::Model::Booking::ActivityQueries
+        extend Yito::Model::Finder        
 
         storage_names[:default] = 'orderds_orders' 
   	  	
