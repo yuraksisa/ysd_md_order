@@ -36,11 +36,15 @@ module Yito
         property :customer_phone, String, :field => 'customer_phone', :required => true, :length => 15 
         property :customer_mobile_phone, String, :field => 'customer_mobile_phone', :length => 15
         property :customer_language, String, :field => 'customer_language', :length => 3
+        belongs_to :customer_address, 'LocationDataSystem::Address', :required => false # The customer address
 
         property :comments, Text
         property :notes, Text
 
         has n, :order_items, 'OrderItem', :constraint => :destroy
+
+        has n, :order_item_customers, 'OrderItemCustomer', :through => :order_items
+        has n, :order_item_resources, 'OrderItemResource', :through => :order_items
 
         property :free_access_id, String, :field => 'free_access_id', :length => 32, :unique_index => :booking_free_access_id_index
 
@@ -48,12 +52,13 @@ module Yito
            :cancelled], :field => 'status', :default => :pending_confirmation
         property :payment_status, Enum[:none, :deposit, :total, :refunded], 
            :field => 'payment_status', :default => :none
-        
+
         #
         # Adds an item to the order
         # 
         def add_item(date, time, item_id, item_description, item_price_type,
-                     quantity, item_unit_cost, item_price_description)
+                     quantity, item_unit_cost, item_price_description,
+                     options={})
 
           # Check if item exists
           order_item = ::Yito::Model::Order::OrderItem.first(
@@ -82,7 +87,27 @@ module Yito
             order_item.quantity = quantity
             order_item.item_unit_cost = item_unit_cost
             order_item.item_cost = order_item.item_unit_cost * order_item.quantity
+            
+            order_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
+            order_item.request_customer_document_id = options[:request_customer_document_id] if options.has_key?(:request_customer_document_id)
+            order_item.request_customer_phone = options[:request_customer_phone] if options.has_key?(:request_customer_phone)
+            order_item.request_customer_email = options[:request_customer_email] if options.has_key?(:request_customer_email)
+            order_item.request_customer_height = options[:request_customer_height] if options.has_key?(:request_customer_height)
+            order_item.request_customer_weight = options[:request_customer_weight] if options.has_key?(:request_customer_weight)
+            order_item.request_customer_allergies_intolerances = options[:request_customer_allergies_intolerances] if options.has_key?(:request_customer_allergies_intolerances)
+            order_item.uses_planning_resources = options[:uses_planning_resources] if options.has_key?(:uses_planning_resources)
+
             order_item.save
+
+            # Create order item customers
+            if order_item.request_customer_information
+              (1..order_item.quantity).each do |item|
+                 order_item_customer = ::Yito::Model::Order::OrderItemCustomer.new 
+                 order_item_customer.shopping_cart_item = order_item
+                 order_item_customer.save
+              end
+            end
+
             self.total_cost += order_item.item_cost
             self.total_pending = 0 if self.total_pending.nil?
             self.total_pending += order_item.item_cost
@@ -132,8 +157,29 @@ module Yito
             order_item.item_cost = shopping_cart_item.item_cost
             order_item.item_price_type = shopping_cart_item.item_price_type
             order_item.item_price_description = shopping_cart_item.item_price_description
+            order_item.request_customer_information = shopping_cart_item.request_customer_information
+            order_item.request_customer_document_id = shopping_cart_item.request_customer_document_id
+            order_item.request_customer_phone = shopping_cart_item.request_customer_phone
+            order_item.request_customer_email = shopping_cart_item.request_customer_email
+            order_item.request_customer_height = shopping_cart_item.request_customer_height
+            order_item.request_customer_weight = shopping_cart_item.request_customer_weight
+            order_item.request_customer_allergies_intolerances = shopping_cart_item.request_customer_allergies_intolerances
+            order_item.uses_planning_resources = shopping_cart_item.uses_planning_resources
             order_item.order = order
             order.order_items << order_item
+            shopping_cart_item.shopping_cart_item_customers.each do |shopping_cart_item_customer|
+              order_item_customer = OrderItemCustomer.new
+              order_item_customer.order_item = order_item
+              order_item_customer.customer_name = shopping_cart_item_customer.customer_name
+              order_item_customer.customer_surname = shopping_cart_item_customer.customer_surname
+              order_item_customer.customer_document_id = shopping_cart_item_customer.customer_document_id
+              order_item_customer.customer_phone = shopping_cart_item_customer.customer_phone
+              order_item_customer.customer_email = shopping_cart_item_customer.customer_email
+              order_item_customer.customer_height = shopping_cart_item_customer.customer_height
+              order_item_customer.customer_weight = shopping_cart_item_customer.customer_weight
+              order_item_customer.customer_allergies_or_intolerances = shopping_cart_item_customer.customer_allergies_or_intolerances
+              order_item.order_item_customers << order_item_customer
+            end
           end
           
           return order
@@ -372,7 +418,7 @@ module Yito
           else
             relationships = options[:relationships] || {}
             relationships.store(:charges, {})
-            relationships.store(:order_items, {})
+            relationships.store(:order_items, {methods: [:customers, :resources]})
             methods = options[:methods] || []
             methods << :is_expired
             methods << :can_pay_deposit

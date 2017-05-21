@@ -19,8 +19,22 @@ module Yito
         property :item_price_description, String, :length => 256
         property :item_price_type, Integer, :required => true, :default => 1
 
+        property :request_customer_information, Boolean, :default => false
+        property :request_customer_document_id, Boolean, :default => false
+        property :request_customer_phone, Boolean, :default => false
+        property :request_customer_email, Boolean, :default => false
+        property :request_customer_height, Boolean, :default => false
+        property :request_customer_weight, Boolean, :default => false
+        property :request_customer_allergies_intolerances, Boolean, :default => false
+        property :uses_planning_resources, Boolean, :default => false
+
         belongs_to :shopping_cart, 'ShoppingCart', :child_key => [:shopping_cart_id]
-          
+        has n, :shopping_cart_item_customers, 'ShoppingCartItemCustomer', :constraint => :destroy
+                  
+        def item_activity
+          ::Yito::Model::Booking::Activity.first(code: item_id) if item_id and !item_id.nil?
+        end
+
       end
     end
   end

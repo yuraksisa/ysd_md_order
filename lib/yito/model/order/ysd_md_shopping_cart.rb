@@ -78,7 +78,8 @@ module Yito
         # Adds an item to the shopping cart
         # 
         def add_item(date, time, item_id, item_description, item_price_type,
-                     quantity, item_unit_cost, item_price_description)
+                     quantity, item_unit_cost, item_price_description,
+                     options={})
 
           # Check if item exists
           shopping_cart_item = ::Yito::Model::Order::ShoppingCartItem.first(
@@ -93,6 +94,14 @@ module Yito
             shopping_cart_item.save
             self.total_cost += inc_cost
             self.save
+            # Create shopping cart item customers
+            if shopping_cart_item.request_customer_information
+              (1..quantity).each do |item|
+                shopping_cart_item_customer = ::Yito::Model::Order::ShoppingCartItemCustomer.new 
+                shopping_cart_item_customer.shopping_cart_item = shopping_cart_item
+                shopping_cart_item_customer.save
+              end
+            end  
           else
             shopping_cart_item = ::Yito::Model::Order::ShoppingCartItem.new
             shopping_cart_item.shopping_cart = self
@@ -105,7 +114,29 @@ module Yito
             shopping_cart_item.quantity = quantity
             shopping_cart_item.item_unit_cost = item_unit_cost
             shopping_cart_item.item_cost = shopping_cart_item.item_unit_cost * shopping_cart_item.quantity
+
+            shopping_cart_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
+            shopping_cart_item.request_customer_document_id = options[:request_customer_document_id] if options.has_key?(:request_customer_document_id)
+            shopping_cart_item.request_customer_phone = options[:request_customer_phone] if options.has_key?(:request_customer_phone)
+            shopping_cart_item.request_customer_email = options[:request_customer_email] if options.has_key?(:request_customer_email)
+            shopping_cart_item.request_customer_height = options[:request_customer_height] if options.has_key?(:request_customer_height)
+            shopping_cart_item.request_customer_weight = options[:request_customer_weight] if options.has_key?(:request_customer_weight)
+            shopping_cart_item.request_customer_allergies_intolerances = options[:request_customer_allergies_intolerances] if options.has_key?(:request_customer_allergies_intolerances)
+            shopping_cart_item.uses_planning_resources = options[:uses_planning_resources] if options.has_key?(:uses_planning_resources)
+
             shopping_cart_item.save
+
+            # Create shopping cart item customers
+            if shopping_cart_item.request_customer_information
+              (1..shopping_cart_item.quantity).each do |item|
+                 shopping_cart_item_customer = ::Yito::Model::Order::ShoppingCartItemCustomer.new 
+                 shopping_cart_item_customer.shopping_cart_item = shopping_cart_item
+                 shopping_cart_item_customer.save
+              end
+            end
+
+            # Updates the shopping cart
+
             self.total_cost += shopping_cart_item.item_cost
             self.save
           end

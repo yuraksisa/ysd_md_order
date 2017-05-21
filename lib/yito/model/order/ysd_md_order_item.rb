@@ -24,11 +24,30 @@ module Yito
         property :comments, Text
         property :notes, Text
 
+        property :request_customer_information, Boolean, :default => false
+        property :request_customer_document_id, Boolean, :default => false
+        property :request_customer_phone, Boolean, :default => false
+        property :request_customer_email, Boolean, :default => false
+        property :request_customer_height, Boolean, :default => false
+        property :request_customer_weight, Boolean, :default => false
+        property :request_customer_allergies_intolerances, Boolean, :default => false
+        property :uses_planning_resources, Boolean, :default => false
+
         belongs_to :order, 'Order', :child_key => [:order_id]
+        
+        has n, :order_item_customers, 'OrderItemCustomer', :constraint => :destroy
+        has n, :order_item_resources, 'OrderItemResource', :constraint => :destroy
+
+        alias_method :customers, :order_item_customers
+        alias_method :resources, :order_item_resources
    
         property :status, Enum[:pending_confirmation, :confirmed,  
            :cancelled], :field => 'status', :default => :pending_confirmation
-        
+
+        def item_activity
+              ::Yito::Model::Booking::Activity.first(code: item_id) if item_id and !item_id.nil?
+        end
+
       end
     end
   end
