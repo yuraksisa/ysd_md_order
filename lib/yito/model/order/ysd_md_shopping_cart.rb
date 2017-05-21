@@ -22,9 +22,14 @@ module Yito
         property :customer_phone, String, :length => 15 
         property :customer_mobile_phone, String, :length => 15
         property :customer_language, String, :length => 3
+        belongs_to :customer_address, 'LocationDataSystem::Address', :required => false # The customer address
 
         has n, :shopping_cart_items, 'ShoppingCartItem', :constraint => :destroy
-        
+
+        def request_customer_address
+          shopping_cart_items.any? { |item| item.request_customer_address }
+        end
+
         def empty?
           shopping_cart_items.empty?
         end
@@ -116,6 +121,7 @@ module Yito
             shopping_cart_item.item_cost = shopping_cart_item.item_unit_cost * shopping_cart_item.quantity
 
             shopping_cart_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
+            shopping_cart_item.request_customer_address = options[:request_customer_address] if options.has_key?(:request_customer_address)
             shopping_cart_item.request_customer_document_id = options[:request_customer_document_id] if options.has_key?(:request_customer_document_id)
             shopping_cart_item.request_customer_phone = options[:request_customer_phone] if options.has_key?(:request_customer_phone)
             shopping_cart_item.request_customer_email = options[:request_customer_email] if options.has_key?(:request_customer_email)
@@ -129,7 +135,13 @@ module Yito
             # Create shopping cart item customers
             if shopping_cart_item.request_customer_information
               (1..shopping_cart_item.quantity).each do |item|
-                 shopping_cart_item_customer = ::Yito::Model::Order::ShoppingCartItemCustomer.new 
+                 shopping_cart_item_customer = ::Yito::Model::Order::ShoppingCartItemCustomer.new
+                 if item == 1
+                   shopping_cart_item_customer.customer_name = customer_name
+                   shopping_cart_item_customer.customer_surname = customer_surname
+                   shopping_cart_item_customer.customer_email = customer_email
+                   shopping_cart_item_customer.customer_phone = customer_phone
+                 end
                  shopping_cart_item_customer.shopping_cart_item = shopping_cart_item
                  shopping_cart_item_customer.save
               end

@@ -53,6 +53,10 @@ module Yito
         property :payment_status, Enum[:none, :deposit, :total, :refunded], 
            :field => 'payment_status', :default => :none
 
+        def request_customer_address
+          order_items.any? { |item| item.request_customer_address }
+        end
+
         #
         # Adds an item to the order
         # 
@@ -89,6 +93,7 @@ module Yito
             order_item.item_cost = order_item.item_unit_cost * order_item.quantity
             
             order_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
+            order_item.request_customer_address = options[:request_customer_address] if options.has_key?(:request_customer_address)
             order_item.request_customer_document_id = options[:request_customer_document_id] if options.has_key?(:request_customer_document_id)
             order_item.request_customer_phone = options[:request_customer_phone] if options.has_key?(:request_customer_phone)
             order_item.request_customer_email = options[:request_customer_email] if options.has_key?(:request_customer_email)
@@ -102,8 +107,15 @@ module Yito
             # Create order item customers
             if order_item.request_customer_information
               (1..order_item.quantity).each do |item|
-                 order_item_customer = ::Yito::Model::Order::OrderItemCustomer.new 
-                 order_item_customer.shopping_cart_item = order_item
+                 order_item_customer = ::Yito::Model::Order::OrderItemCustomer.new
+                 # The first item apply the order customer data
+                 if item==1
+                   order_item_customer.customer_name = customer_name
+                   order_item_customer.customer_surname = customer_surname
+                   order_item_customer.customer_email = customer_email
+                   order_item_customer.customer_phone = customer_phone
+                 end
+                 order_item_customer.order_item = order_item
                  order_item_customer.save
               end
             end
@@ -158,6 +170,7 @@ module Yito
             order_item.item_price_type = shopping_cart_item.item_price_type
             order_item.item_price_description = shopping_cart_item.item_price_description
             order_item.request_customer_information = shopping_cart_item.request_customer_information
+            order_item.request_customer_address = shopping_cart_item.request_customer_address
             order_item.request_customer_document_id = shopping_cart_item.request_customer_document_id
             order_item.request_customer_phone = shopping_cart_item.request_customer_phone
             order_item.request_customer_email = shopping_cart_item.request_customer_email
@@ -418,11 +431,13 @@ module Yito
           else
             relationships = options[:relationships] || {}
             relationships.store(:charges, {})
+            relationships.store(:customer_address, {})
             relationships.store(:order_items, {methods: [:customers, :resources]})
             methods = options[:methods] || []
             methods << :is_expired
             methods << :can_pay_deposit
             methods << :can_pay_total
+            methods << :request_customer_address
             super(options.merge({:relationships => relationships, :methods => methods}))
           end
 
