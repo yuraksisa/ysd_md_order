@@ -19,6 +19,9 @@ module Yito
         property :item_price_description, String, :length => 256
         property :item_price_type, Integer, :required => true, :default => 1
 
+        property :custom_customers_pickup_place, Boolean, :default => false
+        property :customers_pickup_place, String, :length => 256
+
         property :request_customer_information, Boolean, :default => false
         property :request_customer_address, Boolean, :default => false
         property :request_customer_document_id, Boolean, :default => false

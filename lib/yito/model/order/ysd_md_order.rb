@@ -62,6 +62,7 @@ module Yito
         # 
         def add_item(date, time, item_id, item_description, item_price_type,
                      quantity, item_unit_cost, item_price_description,
+                     custom_customers_pickup_place, customers_pickup_place,
                      options={})
 
           # Check if item exists
@@ -91,6 +92,9 @@ module Yito
             order_item.quantity = quantity
             order_item.item_unit_cost = item_unit_cost
             order_item.item_cost = order_item.item_unit_cost * order_item.quantity
+
+            order_item.custom_customers_pickup_place = custom_customers_pickup_place
+            order_item.customers_pickup_place = customers_pickup_place
             
             order_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
             order_item.request_customer_address = options[:request_customer_address] if options.has_key?(:request_customer_address)
@@ -169,6 +173,8 @@ module Yito
             order_item.item_cost = shopping_cart_item.item_cost
             order_item.item_price_type = shopping_cart_item.item_price_type
             order_item.item_price_description = shopping_cart_item.item_price_description
+            order_item.custom_customers_pickup_place = shopping_cart_item.custom_customers_pickup_place
+            order_item.customers_pickup_place = shopping_cart_item.customers_pickup_place            
             order_item.request_customer_information = shopping_cart_item.request_customer_information
             order_item.request_customer_address = shopping_cart_item.request_customer_address
             order_item.request_customer_document_id = shopping_cart_item.request_customer_document_id

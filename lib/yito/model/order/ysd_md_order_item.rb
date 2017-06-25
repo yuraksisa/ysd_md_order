@@ -24,6 +24,9 @@ module Yito
         property :comments, Text
         property :notes, Text
 
+        property :custom_customers_pickup_place, Boolean, :default => false
+        property :customers_pickup_place, String, :length => 256
+        
         property :request_customer_information, Boolean, :default => false
         property :request_customer_address, Boolean, :default => false
         property :request_customer_document_id, Boolean, :default => false
