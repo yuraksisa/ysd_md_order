@@ -460,7 +460,7 @@ module Yito
                       from orderds_order_items o_i
                       join orderds_orders o on o.id = o_i.order_id
                       where item_id = ? and date = ? and time = ? and
-                            o.status not in (5)
+                            o.status not in (3)
                       group by item_id, date, time, item_price_type
                     QUERY
             result = repository.adapter.select(query, item_id, date, time)
@@ -470,7 +470,7 @@ module Yito
                       from orderds_order_items
                       join orderds_orders o on o.id = o_i.order_id
                       where item_id = ? and date = ? and time = ? and item_price_type = ? and
-                            o.status not in (5)
+                            o.status not in (3)
                       group by item_id, date, time, item_price_type
                     QUERY
 
