@@ -467,7 +467,7 @@ module Yito
           else
             query = <<-QUERY
                       select item_id, date, time, item_price_type, sum(quantity) as occupation
-                      from orderds_order_items
+                      from orderds_order_items o_i
                       join orderds_orders o on o.id = o_i.order_id
                       where item_id = ? and date = ? and time = ? and item_price_type = ? and
                             o.status not in (3)
