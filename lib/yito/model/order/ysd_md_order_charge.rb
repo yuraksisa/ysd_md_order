@@ -46,6 +46,13 @@ module Yito
           # None
 
         end
+
+        #
+        # Integration with charges
+        #
+        def charge_source
+          order
+        end
     
         #
         # Integration with charges
