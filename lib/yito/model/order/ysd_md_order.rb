@@ -53,6 +53,8 @@ module Yito
         property :payment_status, Enum[:none, :deposit, :total, :refunded], 
            :field => 'payment_status', :default => :none
 
+        belongs_to :rental_location, 'Yito::Model::Booking::RentalLocation', required: false
+
         def request_customer_address
           order_items.any? { |item| item.request_customer_address }
         end
