@@ -26,6 +26,35 @@ module Yito
 
         has n, :shopping_cart_items, 'ShoppingCartItem', :constraint => :destroy
 
+        property :free_access_id, String, :field => 'free_access_id', :length => 32, :unique_index => :shopping_cart_free_access_id_index
+
+        # ------------------      Hooks    ---------------------------------
+
+        #
+        # Before create hook (initilize fields)
+        #
+        before :create do |shopping_cart|
+          shopping_cart.creation_date = DateTime.now unless shopping_cart.creation_date
+          alphabet = [('a'..'z'), ('A'..'Z')].map(&:to_a).flatten
+          random_string = (0...50).map { alphabet[rand(alphabet.length)] }.join
+          shopping_cart.free_access_id =
+              Digest::MD5.hexdigest("#{rand}#{shopping_cart.creation_date.to_s}#{random_string}#{rand}")
+        end
+
+
+        # ------------------ Class methods ---------------------------------
+
+        #
+        # Get a shopping cart by its free access id
+        #
+        # @parm [String] free access id
+        # @return [ShoppingCart]
+        def self.get_by_free_access_id(free_id)
+          first({:free_access_id => free_id})
+        end
+
+        # ------------------- Instance methods -----------------------------
+
         def request_customer_address
           shopping_cart_items.any? { |item| item.request_customer_address }
         end
@@ -179,6 +208,58 @@ module Yito
             self.save
           end
 
+        end
+
+        #
+        # Check if a request (without payment can be made)
+        #
+        def can_make_request?
+
+          SystemConfiguration::Variable.get_value('order.request_reservations', 'false').to_bool
+          
+        end
+
+        alias_method :can_make_request, :can_make_request?
+        
+        #
+        # Check if the deposit can be paid
+        #
+        def can_pay_deposit?
+
+          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
+          conf_allow_deposit_payment = SystemConfiguration::Variable.get_value('order.allow_deposit_payment','false').to_bool
+
+          can_pay_deposit = conf_payment_enabled && conf_allow_deposit_payment && payment_cadence?
+
+        end
+
+        alias_method :can_pay_deposit, :can_pay_deposit?
+
+        #
+        # Check if the total can be paid
+        #
+        def can_pay_total?
+
+          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
+          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
+
+          can_pay_total = conf_payment_enabled && conf_allow_total_payment && payment_cadence?
+          
+        end
+
+        alias_method :can_pay_total, :can_pay_total?
+
+        #
+        # Check if all the shopping cart items are in payment cadence
+        #
+        def payment_cadence?
+
+          result = true
+          shopping_cart_items.each do |item|
+            result = result && Order.payment_cadence?(item.date) unless item.date.nil?
+          end
+          return result
+          
         end
 
       end

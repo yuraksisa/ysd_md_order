@@ -32,8 +32,8 @@ module Yito
 
         property :customer_name, String, :field => 'customer_name', :required => true, :length => 40
         property :customer_surname, String, :field => 'customer_surname', :required => true, :length => 40
-        property :customer_email, String, :field => 'customer_email', :required => true, :length => 40
-        property :customer_phone, String, :field => 'customer_phone', :required => true, :length => 15 
+        property :customer_email, String, :field => 'customer_email', :length => 40
+        property :customer_phone, String, :field => 'customer_phone', :length => 15
         property :customer_mobile_phone, String, :field => 'customer_mobile_phone', :length => 15
         property :customer_language, String, :field => 'customer_language', :length => 3
         belongs_to :customer_address, 'LocationDataSystem::Address', :required => false # The customer address
@@ -55,9 +55,117 @@ module Yito
 
         belongs_to :rental_location, 'Yito::Model::Booking::RentalLocation', required: false
 
-        def request_customer_address
-          order_items.any? { |item| item.request_customer_address }
+        # ------------------- Hooks --------------------------------------------------------
+
+        #
+        # Before create hook (initilize fields)
+        #
+        before :create do |order|
+          order.creation_date = Time.now unless order.creation_date
+          order.free_access_id =
+              Digest::MD5.hexdigest("#{rand}#{customer_name}#{customer_surname}#{customer_email}#{rand}")
+        end        
+        
+        # ------------------- Class methods ------------------------------------------------
+
+        #
+        # Creates an order from a shopping cart
+        #
+        def self.create_from_shopping_cart(shopping_cart)
+
+          order = Order.new
+          order.source = shopping_cart.source
+          order.total_cost = shopping_cart.total_cost
+          order.total_paid = 0
+          order.total_pending = shopping_cart.total_cost
+          #order.reservation_amount =
+
+          # Build the order items
+          shopping_cart.shopping_cart_items.each do |shopping_cart_item|
+            order_item = OrderItem.new
+            order_item.date = shopping_cart_item.date
+            order_item.time = shopping_cart_item.time
+            order_item.item_id = shopping_cart_item.item_id
+            order_item.item_description = shopping_cart_item.item_description
+            order_item.item_unit_cost = shopping_cart_item.item_unit_cost
+            order_item.quantity = shopping_cart_item.quantity
+            order_item.item_cost = shopping_cart_item.item_cost
+            order_item.item_price_type = shopping_cart_item.item_price_type
+            order_item.item_price_description = shopping_cart_item.item_price_description
+            order_item.custom_customers_pickup_place = shopping_cart_item.custom_customers_pickup_place
+            order_item.customers_pickup_place = shopping_cart_item.customers_pickup_place
+            order_item.request_customer_information = shopping_cart_item.request_customer_information
+            order_item.request_customer_address = shopping_cart_item.request_customer_address
+            order_item.request_customer_document_id = shopping_cart_item.request_customer_document_id
+            order_item.request_customer_phone = shopping_cart_item.request_customer_phone
+            order_item.request_customer_email = shopping_cart_item.request_customer_email
+            order_item.request_customer_height = shopping_cart_item.request_customer_height
+            order_item.request_customer_weight = shopping_cart_item.request_customer_weight
+            order_item.request_customer_allergies_intolerances = shopping_cart_item.request_customer_allergies_intolerances
+            order_item.uses_planning_resources = shopping_cart_item.uses_planning_resources
+            order_item.order = order
+            order.order_items << order_item
+            shopping_cart_item.shopping_cart_item_customers.each do |shopping_cart_item_customer|
+              order_item_customer = OrderItemCustomer.new
+              order_item_customer.order_item = order_item
+              order_item_customer.customer_name = shopping_cart_item_customer.customer_name
+              order_item_customer.customer_surname = shopping_cart_item_customer.customer_surname
+              order_item_customer.customer_document_id = shopping_cart_item_customer.customer_document_id
+              order_item_customer.customer_phone = shopping_cart_item_customer.customer_phone
+              order_item_customer.customer_email = shopping_cart_item_customer.customer_email
+              order_item_customer.customer_height = shopping_cart_item_customer.customer_height
+              order_item_customer.customer_weight = shopping_cart_item_customer.customer_weight
+              order_item_customer.customer_allergies_or_intolerances = shopping_cart_item_customer.customer_allergies_or_intolerances
+              order_item.order_item_customers << order_item_customer
+            end
+          end
+
+          return order
+
         end
+
+        #
+        # Get a order by its free access id
+        #
+        # @parm [String] free access id
+        # @return [Order] 
+        def self.get_by_free_access_id(free_id)
+          first({:free_access_id => free_id})
+        end
+
+        #
+        # Get the occupation of and item_id in a date and a time
+        #
+        def self.occupation(item_id, date, time, price_type=nil)
+
+          if price_type.nil?
+            query = <<-QUERY
+                      select item_id, date, time, item_price_type, sum(quantity) as occupation
+                      from orderds_order_items o_i
+                      join orderds_orders o on o.id = o_i.order_id
+                      where item_id = ? and date = ? and time = ? and
+                            o.status not in (3)
+                      group by item_id, date, time, item_price_type
+            QUERY
+            result = repository.adapter.select(query, item_id, date, time)
+          else
+            query = <<-QUERY
+                      select item_id, date, time, item_price_type, sum(quantity) as occupation
+                      from orderds_order_items o_i
+                      join orderds_orders o on o.id = o_i.order_id
+                      where item_id = ? and date = ? and time = ? and item_price_type = ? and
+                            o.status not in (3)
+                      group by item_id, date, time, item_price_type
+            QUERY
+
+            result = repository.adapter.select(query, item_id, date, time, price_type)
+          end
+
+          return result
+
+        end
+
+        # ------------------- Instance methods ---------------------------------------------
 
         #
         # Adds an item to the order
@@ -152,80 +260,6 @@ module Yito
         end
 
         #
-        # Creates an order from a shopping cart
-        #
-        def self.create_from_shopping_cart(shopping_cart)
-
-          order = Order.new
-          order.source = shopping_cart.source
-          order.total_cost = shopping_cart.total_cost
-          order.total_paid = 0
-          order.total_pending = shopping_cart.total_cost
-          #order.reservation_amount =
-
-          # Build the order items
-          shopping_cart.shopping_cart_items.each do |shopping_cart_item| 
-            order_item = OrderItem.new
-            order_item.date = shopping_cart_item.date 
-            order_item.time = shopping_cart_item.time 
-            order_item.item_id = shopping_cart_item.item_id
-            order_item.item_description = shopping_cart_item.item_description
-            order_item.item_unit_cost = shopping_cart_item.item_unit_cost
-            order_item.quantity = shopping_cart_item.quantity
-            order_item.item_cost = shopping_cart_item.item_cost
-            order_item.item_price_type = shopping_cart_item.item_price_type
-            order_item.item_price_description = shopping_cart_item.item_price_description
-            order_item.custom_customers_pickup_place = shopping_cart_item.custom_customers_pickup_place
-            order_item.customers_pickup_place = shopping_cart_item.customers_pickup_place            
-            order_item.request_customer_information = shopping_cart_item.request_customer_information
-            order_item.request_customer_address = shopping_cart_item.request_customer_address
-            order_item.request_customer_document_id = shopping_cart_item.request_customer_document_id
-            order_item.request_customer_phone = shopping_cart_item.request_customer_phone
-            order_item.request_customer_email = shopping_cart_item.request_customer_email
-            order_item.request_customer_height = shopping_cart_item.request_customer_height
-            order_item.request_customer_weight = shopping_cart_item.request_customer_weight
-            order_item.request_customer_allergies_intolerances = shopping_cart_item.request_customer_allergies_intolerances
-            order_item.uses_planning_resources = shopping_cart_item.uses_planning_resources
-            order_item.order = order
-            order.order_items << order_item
-            shopping_cart_item.shopping_cart_item_customers.each do |shopping_cart_item_customer|
-              order_item_customer = OrderItemCustomer.new
-              order_item_customer.order_item = order_item
-              order_item_customer.customer_name = shopping_cart_item_customer.customer_name
-              order_item_customer.customer_surname = shopping_cart_item_customer.customer_surname
-              order_item_customer.customer_document_id = shopping_cart_item_customer.customer_document_id
-              order_item_customer.customer_phone = shopping_cart_item_customer.customer_phone
-              order_item_customer.customer_email = shopping_cart_item_customer.customer_email
-              order_item_customer.customer_height = shopping_cart_item_customer.customer_height
-              order_item_customer.customer_weight = shopping_cart_item_customer.customer_weight
-              order_item_customer.customer_allergies_or_intolerances = shopping_cart_item_customer.customer_allergies_or_intolerances
-              order_item.order_item_customers << order_item_customer
-            end
-          end
-          
-          return order
-
-        end
-
-        #
-        # Get a order by its free access id
-        #
-        # @parm [String] free access id
-        # @return [Order] 
-        def self.get_by_free_access_id(free_id)
-          first({:free_access_id => free_id})
-        end 
-
-        #
-        # Before create hook (initilize fields)
-        #
-        before :create do |order|
-          order.creation_date = Time.now unless order.creation_date
-          order.free_access_id = 
-            Digest::MD5.hexdigest("#{rand}#{customer_name}#{customer_surname}#{customer_email}#{rand}")
-        end
-
-        #
         # Get the order items group by date, time and item_id
         #
         def order_items_group_by_date_time_item_id
@@ -249,6 +283,24 @@ module Yito
           result
         end
 
+        #
+        # Check if any of the order items requires customer address
+        #
+        def request_customer_address?
+          order_items.any? { |item| item.request_customer_address }
+        end
+
+        alias_method :request_customer_address, :request_customer_address?
+        
+        #
+        # Check if the any of the order items requires customer information
+        #
+        def request_customer_information?
+          order_items.any? { |item| item.request_customer_information }
+        end
+        
+        alias_method :request_customer_information, :request_customer_information?
+        
         #
         # Creates an online charge 
         #
@@ -448,38 +500,6 @@ module Yito
             methods << :request_customer_address
             super(options.merge({:relationships => relationships, :methods => methods}))
           end
-
-        end
-
-        #
-        # Get the occupation of and item_id in a date and a time
-        #
-        def self.occupation(item_id, date, time, price_type=nil)
-
-          if price_type.nil?
-            query = <<-QUERY
-                      select item_id, date, time, item_price_type, sum(quantity) as occupation
-                      from orderds_order_items o_i
-                      join orderds_orders o on o.id = o_i.order_id
-                      where item_id = ? and date = ? and time = ? and
-                            o.status not in (3)
-                      group by item_id, date, time, item_price_type
-                    QUERY
-            result = repository.adapter.select(query, item_id, date, time)
-          else
-            query = <<-QUERY
-                      select item_id, date, time, item_price_type, sum(quantity) as occupation
-                      from orderds_order_items o_i
-                      join orderds_orders o on o.id = o_i.order_id
-                      where item_id = ? and date = ? and time = ? and item_price_type = ? and
-                            o.status not in (3)
-                      group by item_id, date, time, item_price_type
-                    QUERY
-
-            result = repository.adapter.select(query, item_id, date, time, price_type)
-          end
-          
-          return result
 
         end
 
