@@ -138,12 +138,20 @@ module Yito
               end
             end  
           else
+            # Get the product translation
+            if product = ::Yito::Model::Booking::Activity.get(item_id)
+              product_customer_translation = product.translate(self.customer_language)
+              item_description_customer_translation = (product_customer_translation.nil? ? item_description : product_customer_translation.name)
+            else
+              item_description_customer_translation = item_description
+            end
             shopping_cart_item = ::Yito::Model::Order::ShoppingCartItem.new
             shopping_cart_item.shopping_cart = self
             shopping_cart_item.date = date
             shopping_cart_item.time = time
             shopping_cart_item.item_id = item_id
             shopping_cart_item.item_description = item_description
+            shopping_cart_item.item_description_customer_translation = item_description_customer_translation
             shopping_cart_item.item_price_description = item_price_description
             shopping_cart_item.item_price_type = item_price_type
             shopping_cart_item.quantity = quantity

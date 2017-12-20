@@ -78,7 +78,7 @@ module Yito
           order.total_cost = shopping_cart.total_cost
           order.total_paid = 0
           order.total_pending = shopping_cart.total_cost
-          #order.reservation_amount =
+          order.customer_language = shopping_cart.customer_language
 
           # Build the order items
           shopping_cart.shopping_cart_items.each do |shopping_cart_item|
@@ -87,6 +87,7 @@ module Yito
             order_item.time = shopping_cart_item.time
             order_item.item_id = shopping_cart_item.item_id
             order_item.item_description = shopping_cart_item.item_description
+            order_item.item_description_customer_language = shopping_cart_item.item_description_customer_language
             order_item.item_unit_cost = shopping_cart_item.item_unit_cost
             order_item.quantity = shopping_cart_item.quantity
             order_item.item_cost = shopping_cart_item.item_cost
@@ -191,12 +192,21 @@ module Yito
             self.total_pending += inc_cost
             self.save
           else
+            # Get the product translation
+            if product = ::Yito::Model::Booking::Activity.get(item_id)
+              product_customer_translation = product.translate(self.customer_language)
+              item_description_customer_translation = (product_customer_translation.nil? ? item_description : product_customer_translation.name)
+            else
+              item_description_customer_translation = item_description
+            end
+            # Create the order item
             order_item = ::Yito::Model::Order::OrderItem.new
             order_item.order = self
             order_item.date = date
             order_item.time = time
             order_item.item_id = item_id
             order_item.item_description = item_description
+            order_item.item_description_customer_translation = item_description_customer_translation
             order_item.item_price_description = item_price_description
             order_item.item_price_type = item_price_type
             order_item.quantity = quantity
