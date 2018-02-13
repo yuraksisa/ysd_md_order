@@ -14,7 +14,8 @@ module Yito
         property :time_to, String, :field => 'time_to', :required => false
 
         property :item_id, String, :length => 20, :required => true
-        property :item_description, String, :length => 256        
+        property :item_description, String, :length => 256
+        property :item_description_customer_translation, String, :length => 256
         property :item_unit_cost, Decimal, :precision => 10, :scale => 2
         property :quantity, Integer
         property :item_cost, Decimal, :precision => 10, :scale => 2

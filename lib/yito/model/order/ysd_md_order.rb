@@ -87,7 +87,7 @@ module Yito
             order_item.time = shopping_cart_item.time
             order_item.item_id = shopping_cart_item.item_id
             order_item.item_description = shopping_cart_item.item_description
-            order_item.item_description_customer_language = shopping_cart_item.item_description_customer_language
+            order_item.item_description_customer_translation = shopping_cart_item.item_description_customer_translation
             order_item.item_unit_cost = shopping_cart_item.item_unit_cost
             order_item.quantity = shopping_cart_item.quantity
             order_item.item_cost = shopping_cart_item.item_cost
