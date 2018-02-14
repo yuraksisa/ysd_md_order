@@ -429,10 +429,8 @@ module Yito
           conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
           conf_allow_deposit_payment = SystemConfiguration::Variable.get_value('order.allow_deposit_payment','false').to_bool
 
-          can_pay_deposit = (status != :cancelled) && 
-                            ((conf_payment_enabled && conf_allow_deposit_payment && 
-                              !expired? && payment_cadence?) || 
-                             self.force_allow_deposit_payment)
+          can_pay_deposit = (status != :cancelled) && total_paid == 0 &&
+                            ((conf_payment_enabled && conf_allow_deposit_payment && !expired? && payment_cadence?) || self.force_allow_deposit_payment)
 
           return can_pay_deposit
         end
@@ -446,15 +444,28 @@ module Yito
           conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
           conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
 
-          can_pay_total = (status != :cancelled) &&
-                    ((conf_payment_enabled && conf_allow_total_payment && 
-                     !expired? && payment_cadence?) || 
-                     self.force_allow_payment)
+          can_pay_total = (status != :cancelled) && total_paid == 0 &&
+                          ((conf_payment_enabled && conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
 
           return can_pay_total
         end
 
         alias_method :can_pay_total, :can_pay_total?
+
+        #
+        # Check if the pending can be paid
+        #
+        def can_pay_pending?
+          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
+          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
+
+          can_pay_pending = (status != :cancelled) && total_paid > 0 && total_pending > 0 &&
+              ((conf_payment_enabled && conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
+
+          return can_pay_pending
+        end
+
+        alias_method :can_pay_pending, :can_pay_pending?
 
         def payment_cadence?
           result = true
@@ -507,6 +518,7 @@ module Yito
             methods << :is_expired
             methods << :can_pay_deposit
             methods << :can_pay_total
+            methods << :can_pay_pending
             methods << :request_customer_address
             super(options.merge({:relationships => relationships, :methods => methods}))
           end
