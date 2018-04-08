@@ -38,6 +38,11 @@ module Yito
         property :request_customer_allergies_intolerances, Boolean, :default => false
         property :uses_planning_resources, Boolean, :default => false
 
+        property :item_payment_setup, Enum[:default, :custom], default: :default
+        property :item_custom_payment_allow_deposit_payment, Boolean, default: false
+        property :item_custom_payment_deposit, Integer, default: 0
+        property :item_custom_payment_allow_total_payment, Boolean, default: false
+
         belongs_to :order, 'Order', :child_key => [:order_id]
         
         has n, :order_item_customers, 'OrderItemCustomer', :constraint => :destroy
