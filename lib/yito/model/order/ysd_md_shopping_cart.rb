@@ -170,6 +170,10 @@ module Yito
             shopping_cart_item.request_customer_weight = options[:request_customer_weight] if options.has_key?(:request_customer_weight)
             shopping_cart_item.request_customer_allergies_intolerances = options[:request_customer_allergies_intolerances] if options.has_key?(:request_customer_allergies_intolerances)
             shopping_cart_item.uses_planning_resources = options[:uses_planning_resources] if options.has_key?(:uses_planning_resources)
+            shopping_cart_item.item_allow_request_reservation = options[:allow_request_reservation] if options.has_key?(:allow_request_reservation)
+            shopping_cart_item.item_custom_payment_allow_deposit_payment = options[:custom_payment_allow_deposit_payment]  if options.has_key?(:custom_payment_allow_deposit_payment)
+            shopping_cart_item.item_custom_payment_deposit = options[:custom_payment_deposit]  if options.has_key?(:custom_payment_deposit)
+            shopping_cart_item.item_custom_payment_allow_total_payment = options[:custom_payment_allow_total_payment]  if options.has_key?(:custom_payment_allow_total_payment)
 
             shopping_cart_item.save
 
@@ -223,7 +227,8 @@ module Yito
         #
         def can_make_request?
 
-          SystemConfiguration::Variable.get_value('order.request_reservations', 'false').to_bool
+          #SystemConfiguration::Variable.get_value('order.request_reservations', 'false').to_bool
+          shopping_cart_items.any? { |shopping_cart_item| shopping_cart_item.item_allow_request_reservation }
           
         end
 
@@ -234,10 +239,8 @@ module Yito
         #
         def can_pay_deposit?
 
-          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
-          conf_allow_deposit_payment = SystemConfiguration::Variable.get_value('order.allow_deposit_payment','false').to_bool
-
-          can_pay_deposit = conf_payment_enabled && conf_allow_deposit_payment && payment_cadence?
+          conf_allow_deposit_payment = shopping_cart_items.any? { |shopping_cart_item| shopping_cart_item.item_custom_payment_allow_deposit_payment }
+          can_pay_deposit = conf_allow_deposit_payment && payment_cadence?
 
         end
 
@@ -248,11 +251,9 @@ module Yito
         #
         def can_pay_total?
 
-          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
-          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
+          conf_allow_total_payment = shopping_cart_items.any? { |shopping_cart_item| shopping_cart_item.item_custom_payment_allow_total_payment }
+          can_pay_total = conf_allow_total_payment && payment_cadence?
 
-          can_pay_total = conf_payment_enabled && conf_allow_total_payment && payment_cadence?
-          
         end
 
         alias_method :can_pay_total, :can_pay_total?

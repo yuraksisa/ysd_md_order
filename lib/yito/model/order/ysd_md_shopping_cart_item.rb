@@ -33,6 +33,11 @@ module Yito
         property :request_customer_allergies_intolerances, Boolean, :default => false
         property :uses_planning_resources, Boolean, :default => false
 
+        property :item_custom_payment_allow_deposit_payment, Boolean, default: false
+        property :item_custom_payment_deposit, Integer, default: 0
+        property :item_custom_payment_allow_total_payment, Boolean, default: false
+        property :item_allow_request_reservation, Boolean, default: false
+
         belongs_to :shopping_cart, 'ShoppingCart', :child_key => [:shopping_cart_id]
         has n, :shopping_cart_item_customers, 'ShoppingCartItemCustomer', :constraint => :destroy
                   

@@ -104,6 +104,10 @@ module Yito
             order_item.request_customer_weight = shopping_cart_item.request_customer_weight
             order_item.request_customer_allergies_intolerances = shopping_cart_item.request_customer_allergies_intolerances
             order_item.uses_planning_resources = shopping_cart_item.uses_planning_resources
+            order_item.item_payment_setup = shopping_cart_item.item_payment_setup
+            order_item.item_custom_payment_allow_deposit_payment = shopping_cart_item.item_custom_payment_allow_deposit_payment
+            order_item.item_custom_payment_deposit = shopping_cart_item.item_custom_payment_deposit
+            order_item.item_custom_payment_allow_total_payment = shopping_cart_item.item_custom_payment_allow_total_payment
             order_item.order = order
             order.order_items << order_item
             shopping_cart_item.shopping_cart_item_customers.each do |shopping_cart_item_customer|
@@ -182,73 +186,78 @@ module Yito
                                  item_id: item_id, item_price_type: item_price_type)
           
           begin
-          if order_item
-            inc_cost = (quantity * order_item.item_unit_cost)
-            order_item.quantity += quantity
-            order_item.item_cost += inc_cost
-            order_item.save
-            self.total_cost += inc_cost
-            self.total_pending = 0 if self.total_pending.nil?
-            self.total_pending += inc_cost
-            self.save
-          else
-            # Get the product translation
-            if product = ::Yito::Model::Booking::Activity.get(item_id)
-              product_customer_translation = product.translate(self.customer_language)
-              item_description_customer_translation = (product_customer_translation.nil? ? item_description : product_customer_translation.name)
+            if order_item
+              inc_cost = (quantity * order_item.item_unit_cost)
+              order_item.quantity += quantity
+              order_item.item_cost += inc_cost
+              order_item.save
+              self.total_cost += inc_cost
+              self.total_pending = 0 if self.total_pending.nil?
+              self.total_pending += inc_cost
+              self.save
             else
-              item_description_customer_translation = item_description
-            end
-            # Create the order item
-            order_item = ::Yito::Model::Order::OrderItem.new
-            order_item.order = self
-            order_item.date = date
-            order_item.time = time
-            order_item.item_id = item_id
-            order_item.item_description = item_description
-            order_item.item_description_customer_translation = item_description_customer_translation
-            order_item.item_price_description = item_price_description
-            order_item.item_price_type = item_price_type
-            order_item.quantity = quantity
-            order_item.item_unit_cost = item_unit_cost
-            order_item.item_cost = order_item.item_unit_cost * order_item.quantity
-
-            order_item.custom_customers_pickup_place = custom_customers_pickup_place
-            order_item.customers_pickup_place = customers_pickup_place
-            
-            order_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
-            order_item.request_customer_address = options[:request_customer_address] if options.has_key?(:request_customer_address)
-            order_item.request_customer_document_id = options[:request_customer_document_id] if options.has_key?(:request_customer_document_id)
-            order_item.request_customer_phone = options[:request_customer_phone] if options.has_key?(:request_customer_phone)
-            order_item.request_customer_email = options[:request_customer_email] if options.has_key?(:request_customer_email)
-            order_item.request_customer_height = options[:request_customer_height] if options.has_key?(:request_customer_height)
-            order_item.request_customer_weight = options[:request_customer_weight] if options.has_key?(:request_customer_weight)
-            order_item.request_customer_allergies_intolerances = options[:request_customer_allergies_intolerances] if options.has_key?(:request_customer_allergies_intolerances)
-            order_item.uses_planning_resources = options[:uses_planning_resources] if options.has_key?(:uses_planning_resources)
-
-            order_item.save
-
-            # Create order item customers
-            if order_item.request_customer_information
-              (1..order_item.quantity).each do |item|
-                 order_item_customer = ::Yito::Model::Order::OrderItemCustomer.new
-                 # The first item apply the order customer data
-                 if item==1
-                   order_item_customer.customer_name = customer_name
-                   order_item_customer.customer_surname = customer_surname
-                   order_item_customer.customer_email = customer_email
-                   order_item_customer.customer_phone = customer_phone
-                 end
-                 order_item_customer.order_item = order_item
-                 order_item_customer.save
+              # Get the product translation
+              if product = ::Yito::Model::Booking::Activity.get(item_id)
+                product_customer_translation = product.translate(self.customer_language)
+                item_description_customer_translation = (product_customer_translation.nil? ? item_description : product_customer_translation.name)
+              else
+                item_description_customer_translation = item_description
               end
-            end
+              # Create the order item
+              order_item = ::Yito::Model::Order::OrderItem.new
+              order_item.order = self
+              order_item.date = date
+              order_item.time = time
+              order_item.item_id = item_id
+              order_item.item_description = item_description
+              order_item.item_description_customer_translation = item_description_customer_translation
+              order_item.item_price_description = item_price_description
+              order_item.item_price_type = item_price_type
+              order_item.quantity = quantity
+              order_item.item_unit_cost = item_unit_cost
+              order_item.item_cost = order_item.item_unit_cost * order_item.quantity
 
-            self.total_cost += order_item.item_cost
-            self.total_pending = 0 if self.total_pending.nil?
-            self.total_pending += order_item.item_cost
-            self.save
-          end
+              order_item.custom_customers_pickup_place = custom_customers_pickup_place
+              order_item.customers_pickup_place = customers_pickup_place
+
+              order_item.request_customer_information = options[:request_customer_information] if options.has_key?(:request_customer_information)
+              order_item.request_customer_address = options[:request_customer_address] if options.has_key?(:request_customer_address)
+              order_item.request_customer_document_id = options[:request_customer_document_id] if options.has_key?(:request_customer_document_id)
+              order_item.request_customer_phone = options[:request_customer_phone] if options.has_key?(:request_customer_phone)
+              order_item.request_customer_email = options[:request_customer_email] if options.has_key?(:request_customer_email)
+              order_item.request_customer_height = options[:request_customer_height] if options.has_key?(:request_customer_height)
+              order_item.request_customer_weight = options[:request_customer_weight] if options.has_key?(:request_customer_weight)
+              order_item.request_customer_allergies_intolerances = options[:request_customer_allergies_intolerances] if options.has_key?(:request_customer_allergies_intolerances)
+              order_item.uses_planning_resources = options[:uses_planning_resources] if options.has_key?(:uses_planning_resources)
+
+              order_item.item_custom_payment_allow_deposit_payment = options[:custom_payment_allow_deposit_payment]  if options.has_key?(:custom_payment_allow_deposit_payment)
+              order_item.item_custom_payment_deposit = options[:custom_payment_deposit]  if options.has_key?(:custom_payment_deposit)
+              order_item.item_custom_payment_allow_total_payment = options[:custom_payment_allow_total_payment]  if options.has_key?(:custom_payment_allow_total_payment)
+              order_item.item_allow_request_reservation = options[:allow_request_reservation] if options.has_key?(:allow_request_reservation)
+
+              order_item.save
+
+              # Create order item customers
+              if order_item.request_customer_information
+                (1..order_item.quantity).each do |item|
+                   order_item_customer = ::Yito::Model::Order::OrderItemCustomer.new
+                   # The first item apply the order customer data
+                   if item==1
+                     order_item_customer.customer_name = customer_name
+                     order_item_customer.customer_surname = customer_surname
+                     order_item_customer.customer_email = customer_email
+                     order_item_customer.customer_phone = customer_phone
+                   end
+                   order_item_customer.order_item = order_item
+                   order_item_customer.save
+                end
+              end
+
+              self.total_cost += order_item.item_cost
+              self.total_pending = 0 if self.total_pending.nil?
+              self.total_pending += order_item.item_cost
+              self.save
+            end
           rescue DataMapper::SaveFailureError => error
             p "Error adding item. #{order_item.errors.inspect} ** #{self.errors.inspect}"
             raise error
@@ -381,7 +390,6 @@ module Yito
           self
         end
 
-
         #
         # Cancels an order
         #
@@ -426,13 +434,13 @@ module Yito
         # Check if the deposit can be paid
         #
         def can_pay_deposit?
-          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
-          conf_allow_deposit_payment = SystemConfiguration::Variable.get_value('order.allow_deposit_payment','false').to_bool
 
+          conf_allow_deposit_payment = order_items.any? { |order_item| order_item.item_custom_payment_allow_deposit_payment }
           can_pay_deposit = (status != :cancelled) && total_paid == 0 &&
-                            ((conf_payment_enabled && conf_allow_deposit_payment && !expired? && payment_cadence?) || self.force_allow_deposit_payment)
+                            ((conf_allow_deposit_payment && !expired? && payment_cadence?) || self.force_allow_deposit_payment)
 
           return can_pay_deposit
+
         end
 
         alias_method :can_pay_deposit, :can_pay_deposit?
@@ -441,11 +449,9 @@ module Yito
         # Check if the total can be paid
         #
         def can_pay_total?
-          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
-          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
-
+          conf_allow_total_payment = order_items.any? { |order_item| order_item.item_custom_payment_allow_total_payment }
           can_pay_total = (status != :cancelled) && total_paid == 0 &&
-                          ((conf_payment_enabled && conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
+                          ((conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
 
           return can_pay_total
         end
@@ -456,11 +462,9 @@ module Yito
         # Check if the pending can be paid
         #
         def can_pay_pending?
-          conf_payment_enabled = SystemConfiguration::Variable.get_value('order.payment', 'false').to_bool
-          conf_allow_total_payment = SystemConfiguration::Variable.get_value('order.allow_total_payment','false').to_bool
-
+          conf_allow_total_payment = order_items.any? { |order_item| order_item.item_custom_payment_allow_total_payment }
           can_pay_pending = (status != :cancelled) && total_paid > 0 && total_pending > 0 &&
-              ((conf_payment_enabled && conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
+              ((conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
 
           return can_pay_pending
         end
