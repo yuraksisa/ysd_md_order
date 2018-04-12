@@ -104,7 +104,6 @@ module Yito
             order_item.request_customer_weight = shopping_cart_item.request_customer_weight
             order_item.request_customer_allergies_intolerances = shopping_cart_item.request_customer_allergies_intolerances
             order_item.uses_planning_resources = shopping_cart_item.uses_planning_resources
-            order_item.item_payment_setup = shopping_cart_item.item_payment_setup
             order_item.item_custom_payment_allow_deposit_payment = shopping_cart_item.item_custom_payment_allow_deposit_payment
             order_item.item_custom_payment_deposit = shopping_cart_item.item_custom_payment_deposit
             order_item.item_custom_payment_allow_total_payment = shopping_cart_item.item_custom_payment_allow_total_payment
