@@ -28,6 +28,8 @@ module Yito
 
         property :free_access_id, String, :field => 'free_access_id', :length => 32, :unique_index => :shopping_cart_free_access_id_index
 
+        property :promotion_code, String, :length => 256
+
         # ------------------      Hooks    ---------------------------------
 
         #

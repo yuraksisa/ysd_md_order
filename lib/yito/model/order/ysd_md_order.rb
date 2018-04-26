@@ -53,7 +53,9 @@ module Yito
         property :payment_status, Enum[:none, :deposit, :total, :refunded], 
            :field => 'payment_status', :default => :none
 
-        belongs_to :rental_location, 'Yito::Model::Booking::RentalLocation', required: false
+        property :rental_location_code, String, length: 50
+
+        property :promotion_code, String, :length => 256
 
         # ------------------- Hooks --------------------------------------------------------
 
@@ -346,6 +348,21 @@ module Yito
             save
             return charge
           end 
+
+        end
+
+        #
+        # Notify that a new order has been received
+        #
+        def send_new_order_notifications(pay_now)
+
+          if pay_now
+            notify_manager_pay_now
+            notify_request_to_customer_pay_now
+          else
+            notify_manager
+            notify_request_to_customer
+          end
 
         end
 

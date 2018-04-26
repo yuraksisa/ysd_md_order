@@ -233,21 +233,23 @@ module Yito
         # 
         def notify_manager
 
-          if notification_email = SystemConfiguration::Variable.get_value('booking.notification_email')
-            bmn_template = ContentManagerSystem::Template.first(:name => 'order_manager_notification')
+          if send_notifications?
+            if notification_email = SystemConfiguration::Variable.get_value('booking.notification_email')
+              bmn_template = ContentManagerSystem::Template.first(:name => 'order_manager_notification')
 
-            template = if bmn_template
-                         ERB.new bmn_template.text
-                       else
-                         ERB.new Order.manager_notification_template
-                       end
-        
-            message = template.result(binding)
+              template = if bmn_template
+                           ERB.new bmn_template.text
+                         else
+                           ERB.new Order.manager_notification_template
+                         end
 
-            Notifier.delay.notify_manager(notification_email, 
-              ::Yito::Model::Order.r18n.t.notifications.manager_email_subject.to_s, 
-              message, self.id)
+              message = template.result(binding)
 
+              Notifier.delay.notify_manager(notification_email,
+                ::Yito::Model::Order.r18n.t.notifications.manager_email_subject.to_s,
+                message, self.id)
+
+            end
           end
 
         end  
@@ -261,21 +263,23 @@ module Yito
         # 
         def notify_manager_pay_now
 
-          if notification_email = SystemConfiguration::Variable.get_value('booking.notification_email')
-            bmn_template = ContentManagerSystem::Template.first(:name => 'order_manager_notification_pay_now')
+          if send_notifications?
+            if notification_email = SystemConfiguration::Variable.get_value('booking.notification_email')
+              bmn_template = ContentManagerSystem::Template.first(:name => 'order_manager_notification_pay_now')
 
-            template = if bmn_template
-                         ERB.new bmn_template.text
-                       else
-                         ERB.new ::Yito::Model::Order.manager_notification_pay_now_template
-                       end
-        
-            message = template.result(binding)
+              template = if bmn_template
+                           ERB.new bmn_template.text
+                         else
+                           ERB.new ::Yito::Model::Order.manager_notification_pay_now_template
+                         end
 
-            Notifier.delay.notify_manager_pay_now(notification_email, 
-              ::Yito::Model::Order.r18n.t.notifications.manager_paying_email_subject.to_s, 
-              message, self.id)
+              message = template.result(binding)
 
+              Notifier.delay.notify_manager_pay_now(notification_email,
+                ::Yito::Model::Order.r18n.t.notifications.manager_paying_email_subject.to_s,
+                message, self.id)
+
+            end
           end
 
         end
@@ -318,22 +322,24 @@ module Yito
         #
         def notify_request_to_customer
 
-          unless customer_email.empty?
+          if send_notifications?
+            unless customer_email.empty?
 
-            bcn_template = ContentManagerSystem::Template.first(:name => 'order_customer_req_notification')
-        
-            if bcn_template
-              template = ERB.new bcn_template.translate(customer_language).text
-            else
-              template = ERB.new ::Yito::Model::Order.customer_notification_booking_request_template
+              bcn_template = ContentManagerSystem::Template.first(:name => 'order_customer_req_notification')
+
+              if bcn_template
+                template = ERB.new bcn_template.translate(customer_language).text
+              else
+                template = ERB.new ::Yito::Model::Order.customer_notification_booking_request_template
+              end
+
+              message = template.result(binding)
+
+              Notifier.delay.notify_request_to_customer(self.customer_email,
+                ::Yito::Model::Order.r18n.t.notifications.customer_req_email_subject.to_s,
+                message, self.id)
+
             end
-
-            message = template.result(binding)
-
-            Notifier.delay.notify_request_to_customer(self.customer_email, 
-              ::Yito::Model::Order.r18n.t.notifications.customer_req_email_subject.to_s, 
-              message, self.id)
-
           end
 
         end
@@ -347,22 +353,24 @@ module Yito
         #
         def notify_request_to_customer_pay_now
 
-          unless customer_email.empty?
+          if send_notifications?
+            unless customer_email.empty?
 
-            bcn_template = ContentManagerSystem::Template.first(:name => 'order_customer_req_pay_now_notification')
-        
-            if bcn_template
-              template = ERB.new bcn_template.translate(customer_language).text
-            else
-              template = ERB.new ::Yito::Model::Order.customer_notification_request_pay_now_template
+              bcn_template = ContentManagerSystem::Template.first(:name => 'order_customer_req_pay_now_notification')
+
+              if bcn_template
+                template = ERB.new bcn_template.translate(customer_language).text
+              else
+                template = ERB.new ::Yito::Model::Order.customer_notification_request_pay_now_template
+              end
+
+              message = template.result(binding)
+
+              Notifier.delay.notify_request_to_customer_pay_now(self.customer_email,
+                ::Yito::Model::Order.r18n.t.notifications.customer_req_email_subject.to_s,
+                message, self.id)
+
             end
-
-            message = template.result(binding)
-
-            Notifier.delay.notify_request_to_customer_pay_now(self.customer_email, 
-              ::Yito::Model::Order.r18n.t.notifications.customer_req_email_subject.to_s, 
-              message, self.id)
-
           end
 
         end
@@ -421,6 +429,19 @@ module Yito
 
           end
 
+
+        end
+
+        #
+        # Check if the notifications should be send
+        #
+        def send_notifications?
+
+          if created_by_manager
+            notify = SystemConfiguration::Variable.get_value('booking.send_notifications_backoffice_reservations', 'false').to_bool
+          else
+            notify = SystemConfiguration::Variable.get_value('booking.send_notifications', 'true').to_bool
+          end
 
         end
   
