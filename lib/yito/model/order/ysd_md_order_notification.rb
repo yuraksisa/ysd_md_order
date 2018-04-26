@@ -246,7 +246,7 @@ module Yito
               message = template.result(binding)
 
               Notifier.delay.notify_manager(notification_email,
-                ::Yito::Model::Order.r18n.t.notifications.manager_email_subject.to_s,
+                ::Yito::Model::Order.r18n(self.customer_language).t.notifications.manager_email_subject.to_s,
                 message, self.id)
 
             end
@@ -276,7 +276,7 @@ module Yito
               message = template.result(binding)
 
               Notifier.delay.notify_manager_pay_now(notification_email,
-                ::Yito::Model::Order.r18n.t.notifications.manager_paying_email_subject.to_s,
+                ::Yito::Model::Order.r18n(self.customer_language).t.notifications.manager_paying_email_subject.to_s,
                 message, self.id)
 
             end
@@ -305,7 +305,7 @@ module Yito
             message = template.result(binding)
 
             Notifier.delay.notify_manager(notification_email, 
-              ::Yito::Model::Order.r18n.t.notifications.manager_confirmation_email_subject.to_s, 
+              ::Yito::Model::Order.r18n(self.customer_language).t.notifications.manager_confirmation_email_subject.to_s,
               message,
               self.id)
 
@@ -336,7 +336,7 @@ module Yito
               message = template.result(binding)
 
               Notifier.delay.notify_request_to_customer(self.customer_email,
-                ::Yito::Model::Order.r18n.t.notifications.customer_req_email_subject.to_s,
+                ::Yito::Model::Order.r18n(self.customer_language).t.notifications.customer_req_email_subject.to_s,
                 message, self.id)
 
             end
@@ -367,7 +367,7 @@ module Yito
               message = template.result(binding)
 
               Notifier.delay.notify_request_to_customer_pay_now(self.customer_email,
-                ::Yito::Model::Order.r18n.t.notifications.customer_req_email_subject.to_s,
+                ::Yito::Model::Order.r18n(self.customer_language).t.notifications.customer_req_email_subject.to_s,
                 message, self.id)
 
             end
@@ -399,7 +399,7 @@ module Yito
             message = template.result(binding)
 
             Notifier.delay.notify_customer(self.customer_email, 
-              ::Yito::Model::Order.r18n.t.notifications.customer_email_subject.to_s, 
+              ::Yito::Model::Order.r18n(self.customer_language).t.notifications.customer_email_subject.to_s,
               message, self.id)
 
           end
@@ -424,7 +424,7 @@ module Yito
             message = template.result(binding)
 
             Notifier.delay.notify_customer_payment_enabled(self.customer_email, 
-              ::Yito::Model::Order.r18n.t.notifications.customer_payment_enabled_subject.to_s, 
+              ::Yito::Model::Order.r18n(self.customer_language).t.notifications.customer_payment_enabled_subject.to_s,
               message, self.id)
 
           end

@@ -17,8 +17,13 @@ module Yito
   	module Order
       extend Yito::Translation::ModelR18
 
-      def self.r18n
-        check_r18n!(:orders_r18n, File.expand_path(File.join(File.dirname(__FILE__), '..', 'i18n')))
+      def self.r18n(locale=nil)
+        path = File.expand_path(File.join(File.dirname(__FILE__), '..', 'i18n'))
+        if locale.nil?
+          check_r18n!(:orders_r18n, path)
+        else
+          R18n::I18n.new(locale, path)
+        end
       end
     end
   end
