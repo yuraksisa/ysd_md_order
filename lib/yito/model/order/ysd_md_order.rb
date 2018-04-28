@@ -53,7 +53,7 @@ module Yito
         property :payment_status, Enum[:none, :deposit, :total, :refunded], 
            :field => 'payment_status', :default => :none
 
-        property :rental_location_code, String, length: 50
+        property :rental_location_code, String, length:50
 
         property :promotion_code, String, :length => 256
 
@@ -462,19 +462,6 @@ module Yito
         alias_method :can_pay_deposit, :can_pay_deposit?
 
         #
-        # Check if the total can be paid
-        #
-        def can_pay_total?
-          conf_allow_total_payment = order_items.any? { |order_item| order_item.item_custom_payment_allow_total_payment }
-          can_pay_total = (status != :cancelled) && total_paid == 0 &&
-                          ((conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
-
-          return can_pay_total
-        end
-
-        alias_method :can_pay_total, :can_pay_total?
-
-        #
         # Check if the pending can be paid
         #
         def can_pay_pending?
@@ -486,6 +473,20 @@ module Yito
         end
 
         alias_method :can_pay_pending, :can_pay_pending?
+
+
+        #
+        # Check if the total can be paid
+        #
+        def can_pay_total?
+          conf_allow_total_payment = order_items.any? { |order_item| order_item.item_custom_payment_allow_total_payment }
+          can_pay_total = (status != :cancelled) && total_paid == 0 &&
+                          ((conf_allow_total_payment && !expired? && payment_cadence?) || self.force_allow_payment)
+
+          return can_pay_total
+        end
+
+        alias_method :can_pay_total, :can_pay_total?
 
         def payment_cadence?
           result = true
