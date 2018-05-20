@@ -106,6 +106,7 @@ module Yito
             order_item.request_customer_weight = shopping_cart_item.request_customer_weight
             order_item.request_customer_allergies_intolerances = shopping_cart_item.request_customer_allergies_intolerances
             order_item.uses_planning_resources = shopping_cart_item.uses_planning_resources
+            order_item.own_contract = shopping_cart_item.own_contract
             order_item.item_custom_payment_allow_deposit_payment = shopping_cart_item.item_custom_payment_allow_deposit_payment
             order_item.item_custom_payment_deposit = shopping_cart_item.item_custom_payment_deposit
             order_item.item_custom_payment_allow_total_payment = shopping_cart_item.item_custom_payment_allow_total_payment
@@ -291,7 +292,13 @@ module Yito
                (last_order_item.date != order_item.date or
                 last_order_item.time != order_item.time or 
                 last_order_item.item_id != order_item.item_id)
-              result.store(idx, {items: [order_item], total: order_item.item_cost})
+              result.store(idx, {date: order_item.date,
+                                 time: order_item.time,
+                                 item_id: order_item.item_id,
+                                 item_description: order_item.item_description,
+                                 own_contract: order_item.own_contract,
+                                 items: [order_item],
+                                 total: order_item.item_cost})
               idx += 1
               last_order_item = order_item
             else
@@ -301,6 +308,82 @@ module Yito
             end
           end
           result
+        end
+
+        #
+        # Check if any of the order items has own contract
+        #
+        def own_contract?
+          order_items.any? { |item| item.own_contract }
+        end
+
+        #
+        # Get the purchased items that has contracts
+        #
+        def contract_purchased_items
+
+          ids = order_items.select { |item| item.own_contract }.map { |item| item.item_id }.uniq
+
+        end
+
+        #
+        # Get the contracts that must be printed
+        #
+        def contracts
+
+          items_grouped = self.order_items_group_by_date_time_item_id
+
+          contracts = items_grouped.select {|k,v| v[:own_contract] }.values.map do |item|
+
+            customer_address = if self.customer_address
+                                 {street: self.customer_address.street,
+                                  number: self.customer_address.number,
+                                  complement: self.customer_address.complement,
+                                  city: self.customer_address.city,
+                                  state: self.customer_address.state,
+                                  country: self.customer_address.country,
+                                  zip: self.customer_address.zip
+                                 }
+                               else
+                                 {street: '',
+                                  number: '',
+                                  complement: '',
+                                  city: '',
+                                  state: '',
+                                  country: '',
+                                  zip: ''
+                                 }
+                               end
+
+            customers = []
+            item[:items].each do |order_item|
+              order_item.order_item_customers.each do |order_item_customer|
+                customers << {customer_name: order_item_customer.customer_name,
+                              customer_surname: order_item_customer.customer_surname,
+                              customer_email: order_item_customer.customer_email,
+                              customer_phone: order_item_customer.customer_phone,
+                              customer_document_id: order_item_customer.customer_document_id,
+                              customer_height: order_item_customer.customer_height,
+                              customer_weight: order_item_customer.customer_weight
+                             }
+              end
+            end
+
+            data = {id: self.id,
+                    date: item[:date].strftime('%Y-%m-%d'),
+                    item_id: item[:item_id],
+                    item_description: item[:item_description],
+                    customer_name: self.customer_name,
+                    customer_surname: self.customer_surname,
+                    customer_email: self.customer_email,
+                    customer_phone: self.customer_phone,
+                    customer_mobile_phone: self.customer_mobile_phone,
+                    customer_address: customer_address,
+                    customers: customers
+                   }
+
+          end
+
         end
 
         #
@@ -541,6 +624,7 @@ module Yito
             methods << :can_pay_total
             methods << :can_pay_pending
             methods << :request_customer_address
+            methods << :contracts
             super(options.merge({:relationships => relationships, :methods => methods}))
           end
 

@@ -37,6 +37,7 @@ module Yito
         property :request_customer_weight, Boolean, :default => false
         property :request_customer_allergies_intolerances, Boolean, :default => false
         property :uses_planning_resources, Boolean, :default => false
+        property :own_contract, Boolean, default: false
 
         property :item_custom_payment_allow_deposit_payment, Boolean, default: false
         property :item_custom_payment_deposit, Integer, default: 0

@@ -172,6 +172,7 @@ module Yito
             shopping_cart_item.request_customer_weight = options[:request_customer_weight] if options.has_key?(:request_customer_weight)
             shopping_cart_item.request_customer_allergies_intolerances = options[:request_customer_allergies_intolerances] if options.has_key?(:request_customer_allergies_intolerances)
             shopping_cart_item.uses_planning_resources = options[:uses_planning_resources] if options.has_key?(:uses_planning_resources)
+            shopping_cart_item.own_contract = options[:own_contract] if options.has_key?(:own_contract)
             shopping_cart_item.item_allow_request_reservation = options[:allow_request_reservation] if options.has_key?(:allow_request_reservation)
             shopping_cart_item.item_custom_payment_allow_deposit_payment = options[:custom_payment_allow_deposit_payment]  if options.has_key?(:custom_payment_allow_deposit_payment)
             shopping_cart_item.item_custom_payment_deposit = options[:custom_payment_deposit]  if options.has_key?(:custom_payment_deposit)
