@@ -76,6 +76,7 @@ module Yito
         def self.create_from_shopping_cart(shopping_cart)
 
           order = Order.new
+          order.creation_date = DateTime.now
           order.source = shopping_cart.source
           order.total_cost = shopping_cart.total_cost
           order.total_paid = 0
@@ -526,7 +527,7 @@ module Yito
         #
         def expired?
            conf_item_hold_time = SystemConfiguration::Variable.get_value('order.item_hold_time', '0').to_i
-           hold_time_diff_in_hours = (DateTime.now.to_time - self.creation_date.to_time) / 3600
+           hold_time_diff_in_hours = (DateTime.now.to_time - (self.creation_date.to_time || DateTime.now.to_time)) / 3600
            expired = (hold_time_diff_in_hours > conf_item_hold_time)
            expired and (!force_allow_payment or !force_allow_deposit_payment)
         end

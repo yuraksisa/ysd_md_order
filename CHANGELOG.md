@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.43] - 2018-05-24
+### Updated
+- Deposit payment expired? bug
+
 ## [0.2.42] - 2018-05-22
 ### Updated
 - Contract - total paid / total pending and item detail information
