@@ -1,0 +1,91 @@
+pdf = Prawn::Document.new
+
+BASE_PATH = Dir.pwd
+font_file_regular = File.join(File.expand_path(BASE_PATH),'themes','default','static','fonts','DejaVuSans.ttf')
+font_file_bold = File.join(File.expand_path(BASE_PATH),'themes','default','static','fonts','DejaVuSans-Bold.ttf')
+
+pdf.font_families.update(
+{'DejaVuSans' => { :normal => font_file_regular, :bold => font_file_bold}})
+pdf.font 'DejaVuSans'
+
+# Header =======================
+
+# ----- Logo -------------------
+image = File.join(File.expand_path(BASE_PATH),'themes','default','static','img','contract_logo.png')
+pdf.image image, width: 200, at: [0, 745]
+
+# Contract information =========
+pdf.move_down 50
+pdf.text "Contrato de actividad", inline_format: true, size: 20
+pdf.move_down 10
+
+y_position = pdf.cursor
+pdf.bounding_box([0, y_position], :width => 280, :height => 80) do
+pdf.text "<b>NIF:</b> #{SystemConfiguration::CompanyInformation.instance.document_id}", inline_format: true, size:10
+pdf.text "<b>Domicilio:</b> #{SystemConfiguration::CompanyInformation.instance.address_1} #{SystemConfiguration::CompanyInformation.instance.address_2}", inline_format: true, size:10
+pdf.text "<b>Email:</b> #{SystemConfiguration::CompanyInformation.instance.email}", inline_format: true, size:10
+end
+
+pdf.bounding_box([300, y_position], :width => 280, :height => 80) do
+pdf.text "<b>Nombre y apellidos:</b> #{order.customer_name} #{order.customer_surname}", inline_format: true, size:10
+pdf.text "<b>DNI:</b> #{order.customer_document_id}", inline_format: true, size:10
+pdf.text "<b>Email:</b> #{order.customer_email}", inline_format: true, size: 10
+end
+
+
+# Detail =======================
+
+table_data = []
+table_data << ["Producto","Tarifa","Cantidad","Coste unitario","Total"]
+order.order_items.each do |order_item|
+table_data << ["#{order_item.item_id} #{order_item.item_description_customer_translation}",
+order_item.item_price_description,
+order_item.quantity,
+"%.2f" % order_item.item_unit_cost,
+"%.2f" % order_item.item_cost]
+end
+table_data << ["Precio total","","","","%.2f" % order.total_cost]
+
+pdf.move_down 20
+pdf.table(table_data, position: :center) do |t|
+t.column(1).style(:align => :center, size: 10)
+t.column(2).style(:align => :center, size: 10)
+t.column(3).style(:align => :right, size: 10)
+t.column(4).style(:align => :right, size: 10)
+t.column(5).style(:align => :right, size: 10)
+end
+
+# Conditions ============
+pdf.move_down 20
+pdf.text "<b>Condiciones</b>", inline_format: true, size: 14
+text_1 = <<-TEXT
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sollicitudin augue vitae aliquet interdum.
+Fusce malesuada odio porttitor blandit auctor. Duis feugiat orci eu felis ultricies, a accumsan tortor convallis.
+Nullam vitae purus aliquam, volutpat diam in, lobortis leo. Donec eget nunc nec massa fringilla luctus eget ut libero.
+Maecenas molestie imperdiet feugiat. Duis tempus, metus laoreet fringilla semper, dolor diam venenatis orci, ac
+tincidunt turpis nunc id purus. Vivamus vitae urna est. Cras urna sapien, porttitor id quam vel, molestie maximus mi.
+Sed sed magna et justo mattis laoreet. Nam blandit magna tristique, rutrum nisl et, imperdiet ex. Fusce nec sapien
+tincidunt, commodo nisi vitae, tincidunt magna. In libero enim, dignissim eleifend sapien at, tincidunt euismod est.
+In tellus nibh, sagittis vel eleifend a, auctor in arcu.
+TEXT
+text_2 = <<-TEXT
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sollicitudin augue vitae aliquet interdum.
+Fusce malesuada odio porttitor blandit auctor. Duis feugiat orci eu felis ultricies, a accumsan tortor convallis.
+Nullam vitae purus aliquam, volutpat diam in, lobortis leo. Donec eget nunc nec massa fringilla luctus eget ut libero.
+Maecenas molestie imperdiet feugiat. Duis tempus, metus laoreet fringilla semper, dolor diam venenatis orci, ac
+tincidunt turpis nunc id purus. Vivamus vitae urna est. Cras urna sapien, porttitor id quam vel, molestie maximus mi.
+Sed sed magna et justo mattis laoreet. Nam blandit magna tristique, rutrum nisl et, imperdiet ex. Fusce nec sapien
+tincidunt, commodo nisi vitae, tincidunt magna. In libero enim, dignissim eleifend sapien at, tincidunt euismod est.
+In tellus nibh, sagittis vel eleifend a, auctor in arcu.
+TEXT
+pdf.text text_1, inline_format: true, size: 10
+pdf.text text_2, inline_format: true, size: 10
+
+# FOOTER ================
+pdf.move_down 20
+pdf.text "He leído y acepto las condiciones", inline_format: true, size: 10, align: :right
+
+
+
+# Render the report
+pdf.render

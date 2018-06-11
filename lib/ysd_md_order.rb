@@ -11,6 +11,7 @@ require 'yito/model/order/ysd_md_request_information'
 require 'yito/model/order/ysd_md_shopping_cart'
 require 'yito/model/order/ysd_md_shopping_cart_item'
 require 'yito/model/order/ysd_md_shopping_cart_item_customer'
+require 'yito/model/order/ysd_md_order_template'
 
 module Yito
   module Model

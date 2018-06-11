@@ -36,6 +36,7 @@ module Yito
         property :customer_phone, String, :field => 'customer_phone', :length => 15
         property :customer_mobile_phone, String, :field => 'customer_mobile_phone', :length => 15
         property :customer_language, String, :field => 'customer_language', :length => 3
+        property :customer_document_id, String, :length => 50
         belongs_to :customer_address, 'LocationDataSystem::Address', :required => false # The customer address
 
         property :comments, Text
