@@ -203,7 +203,11 @@ module Yito
               # Get the product translation
               if product = ::Yito::Model::Booking::Activity.get(item_id)
                 product_customer_translation = product.translate(self.customer_language)
-                item_description_customer_translation = (product_customer_translation.nil? ? item_description : product_customer_translation.name)
+                if item_description == product.name
+                  item_description_customer_translation = (product_customer_translation.nil? ? item_description : product_customer_translation.name)
+                else
+                  item_description_customer_translation = item_description
+                end  
               else
                 item_description_customer_translation = item_description
               end
