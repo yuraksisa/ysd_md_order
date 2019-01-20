@@ -43,6 +43,9 @@ module Yito
         belongs_to :shopping_cart, 'ShoppingCart', :child_key => [:shopping_cart_id]
         has n, :shopping_cart_item_customers, 'ShoppingCartItemCustomer', :constraint => :destroy
                   
+        # Item supplier
+        belongs_to :supplier, 'Yito::Model::Suppliers::Supplier', child_key: [:supplier_id], parent_id: [:id], required: false
+                  
         def item_activity
           ::Yito::Model::Booking::Activity.first(code: item_id) if item_id and !item_id.nil?
         end

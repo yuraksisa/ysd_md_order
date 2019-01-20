@@ -58,6 +58,8 @@ module Yito
 
         property :promotion_code, String, :length => 256
 
+        belongs_to :customer, 'Yito::Model::Customers::Customer', required: false, child_key: [:customer_id], parent_key: [:id]
+
         # ------------------- Hooks --------------------------------------------------------
 
         #
